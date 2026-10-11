@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/alexistdev/geopatungan/internal/group"
+	"github.com/alexistdev/geopatungan/internal/round"
 )
 
 type Repository struct {
@@ -169,6 +170,9 @@ func (r *Repository) Execute(ctx context.Context, groupID string, ordered []Entr
 			return err
 		}
 	}
+	if err := round.CreateSchedule(ctx, tx, groupID); err != nil {
+		return err
+	}
 	if _, err := tx.Exec(ctx, `UPDATE group_draws SET executed_at = now() WHERE id = $1`, drawID); err != nil {
 		return err
 	}
@@ -215,6 +219,9 @@ func (r *Repository) Manual(ctx context.Context, d *Draw) error {
 			d.GroupID, e.MemberID, e.Order); err != nil {
 			return err
 		}
+	}
+	if err := round.CreateSchedule(ctx, tx, d.GroupID); err != nil {
+		return err
 	}
 	if _, err := tx.Exec(ctx, `UPDATE groups SET status = 'running' WHERE id = $1`, d.GroupID); err != nil {
 		return err
