@@ -311,6 +311,14 @@ func TestJoin(t *testing.T) {
 		}
 	})
 
+	t.Run("slot sudah penuh", func(t *testing.T) {
+		store.groups[g.ID].ActiveMembers = g.SlotCount
+		defer func() { store.groups[g.ID].ActiveMembers = 1 }()
+		if _, err := svc.Join(ctx, "user-6", g.InviteCode); !errors.Is(err, ErrGroupFull) {
+			t.Errorf("err = %v, want ErrGroupFull", err)
+		}
+	})
+
 	t.Run("grup tidak lagi open", func(t *testing.T) {
 		store.groups[g.ID].Status = "running"
 		defer func() { store.groups[g.ID].Status = "open" }()

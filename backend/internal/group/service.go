@@ -143,6 +143,9 @@ func (s *Service) Join(ctx context.Context, userID, inviteCode string) (*Group, 
 	if g.Status != "open" {
 		return nil, ErrGroupNotOpen
 	}
+	if g.ActiveMembers >= g.SlotCount {
+		return nil, ErrGroupFull
+	}
 
 	rank, err := s.levels.Rank(ctx, userID)
 	if err != nil {
