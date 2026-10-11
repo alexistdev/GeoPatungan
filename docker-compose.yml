@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: geopatungan-db
+    environment:
+      POSTGRES_USER: geopatungan
+      POSTGRES_PASSWORD: geopatungan_dev
+      POSTGRES_DB: geopatungan
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
