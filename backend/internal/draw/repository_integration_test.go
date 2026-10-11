@@ -139,6 +139,45 @@ func (e *env) groupStatus(t *testing.T, id string) string {
 	return s
 }
 
+func (e *env) count(t *testing.T, sql string, args ...any) int {
+	t.Helper()
+	var n int
+	if err := e.pool.QueryRow(context.Background(), sql, args...).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	return n
+}
+
+func (e *env) str(t *testing.T, sql string, args ...any) string {
+	t.Helper()
+	var v string
+	if err := e.pool.QueryRow(context.Background(), sql, args...).Scan(&v); err != nil {
+		t.Fatal(err)
+	}
+	return v
+}
+
+// requireSchedule memeriksa jadwal yang terbentuk bersama kocokan: satu putaran per slot,
+// satu iuran per anggota per putaran, penerima putaran k = anggota ber-turn_order k.
+func (e *env) requireSchedule(t *testing.T, groupID string, slots int, orderOf map[string]int) {
+	t.Helper()
+	if n := e.count(t, `SELECT count(*) FROM rounds WHERE group_id = $1`, groupID); n != slots {
+		t.Errorf("putaran = %d, want %d", n, slots)
+	}
+	if n := e.count(t, `SELECT count(*) FROM contributions c JOIN rounds r ON r.id = c.round_id WHERE r.group_id = $1`, groupID); n != slots*slots {
+		t.Errorf("iuran = %d, want %d", n, slots*slots)
+	}
+	for memberID, order := range orderOf {
+		got := e.str(t, `SELECT recipient_member_id::text FROM rounds WHERE group_id = $1 AND round_no = $2`, groupID, order)
+		if got != memberID {
+			t.Errorf("penerima putaran %d = %s, want %s", order, got, memberID)
+		}
+	}
+	if st := e.str(t, `SELECT status FROM rounds WHERE group_id = $1 AND round_no = 1`, groupID); st != "collecting" {
+		t.Errorf("status putaran 1 = %s, want collecting", st)
+	}
+}
+
 func (e *env) turnOrders(t *testing.T, groupID string) map[string]int {
 	t.Helper()
 	rows, err := e.pool.Query(context.Background(),
@@ -243,6 +282,9 @@ func TestRepoCommitExecuteFlow(t *testing.T) {
 			t.Errorf("verifikasi ulang berbeda di posisi %d", i)
 		}
 	}
+
+	// jadwal putaran & iuran terbentuk atomik bersama kocokan
+	e.requireSchedule(t, g.ID, 4, orders)
 
 	// tidak bisa diulang
 	if err := e.repo.Execute(ctx, g.ID, ordered); !errors.Is(err, ErrAlreadyExecuted) {
@@ -421,6 +463,7 @@ func TestRepoManual(t *testing.T) {
 	if e.groupStatus(t, g.ID) != "running" {
 		t.Error("grup harus running setelah urutan manual")
 	}
+	e.requireSchedule(t, g.ID, 3, orders)
 
 	d2 := &Draw{GroupID: g.ID, Algorithm: "manual", Entries: entries}
 	if err := e.repo.Manual(ctx, d2); !errors.Is(err, ErrGroupStarted) {
@@ -438,3 +481,49 @@ func TestRepoGetNoDraw(t *testing.T) {
 
 // testRand mengembalikan sumber acak kriptografis untuk membuat seed di tes.
 func testRand() io.Reader { return crand.Reader }
+
+// Jika pembuatan jadwal gagal, seluruh kocokan harus batal: tidak boleh ada grup
+// yang urutannya sudah ditetapkan tetapi tanpa jadwal.
+func TestRepoExecuteRollsBackWhenScheduleFails(t *testing.T) {
+	e := newEnv(t)
+	ctx := context.Background()
+	g, members := e.newGroup(t, 3, 3, "random")
+	d, seed := newDraw(t, g.ID, entriesFor(members))
+	if err := e.repo.Commit(ctx, d); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := e.repo.Get(ctx, g.ID)
+	ordered, _ := ComputeOrder(seed, got.Entries)
+
+	// putaran 1 sudah ada -> CreateSchedule akan melanggar UNIQUE(group_id, round_no)
+	if _, err := e.pool.Exec(ctx,
+		`INSERT INTO rounds (group_id, round_no, due_date, recipient_member_id)
+		 VALUES ($1, 1, '2026-12-01', $2)`, g.ID, members[0].ID); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := e.repo.Execute(ctx, g.ID, ordered); err == nil {
+		t.Fatal("Execute seharusnya gagal karena jadwal tidak bisa dibuat")
+	}
+
+	after, _ := e.repo.Get(ctx, g.ID)
+	if after.ExecutedAt != nil || after.SeedReveal != "" {
+		t.Error("kocokan tidak boleh tercatat selesai")
+	}
+	for _, en := range after.Entries {
+		if en.Order != nil {
+			t.Error("urutan tidak boleh tersimpan")
+		}
+	}
+	for id, o := range e.turnOrders(t, g.ID) {
+		if o != 0 {
+			t.Errorf("turn_order %s = %d, seharusnya masih kosong", id, o)
+		}
+	}
+	if e.groupStatus(t, g.ID) != "open" {
+		t.Error("grup harus tetap open")
+	}
+	if n := e.count(t, `SELECT count(*) FROM contributions c JOIN rounds r ON r.id = c.round_id WHERE r.group_id = $1`, g.ID); n != 0 {
+		t.Errorf("iuran tersisa = %d, want 0", n)
+	}
+}
