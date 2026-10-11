@@ -18,6 +18,7 @@ import (
 	"github.com/alexistdev/geopatungan/internal/auth"
 	"github.com/alexistdev/geopatungan/internal/config"
 	"github.com/alexistdev/geopatungan/internal/database"
+	"github.com/alexistdev/geopatungan/internal/draw"
 	"github.com/alexistdev/geopatungan/internal/group"
 	"github.com/alexistdev/geopatungan/internal/middleware"
 	"github.com/alexistdev/geopatungan/internal/user"
@@ -37,7 +38,10 @@ func main() {
 	tokens := auth.NewTokenManager(cfg.JWTSecret, cfg.JWTTTL)
 	authHandler := auth.NewHandler(auth.NewService(userRepo, tokens))
 	userHandler := user.NewHandler(userRepo)
-	groupHandler := group.NewHandler(group.NewService(group.NewRepository(db), group.BaseLevel{}))
+	groupRepo := group.NewRepository(db)
+	levels := group.BaseLevel{} // diganti implementasi reputasi nanti
+	groupHandler := group.NewHandler(group.NewService(groupRepo, levels))
+	drawHandler := draw.NewHandler(draw.NewService(groupRepo, draw.NewRepository(db), levels))
 
 	r := chi.NewRouter()
 	r.Use(chimw.Logger, chimw.Recoverer)
@@ -60,7 +64,10 @@ func main() {
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.Authenticate(tokens))
 			r.Get("/me", userHandler.Me)
-			r.Route("/groups", groupHandler.Routes)
+			r.Route("/groups", func(r chi.Router) {
+				groupHandler.Routes(r)
+				drawHandler.Routes(r)
+			})
 		})
 	})
 

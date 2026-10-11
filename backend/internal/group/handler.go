@@ -30,12 +30,12 @@ func (h *Handler) Routes(r chi.Router) {
 	r.Post("/", h.Create)
 	r.Get("/", h.ListMine)
 	r.Post("/join", h.Join)
-	r.Route("/{id}", func(r chi.Router) {
-		r.Get("/", h.Get)
-		r.Get("/members", h.Members)
-		r.Post("/members/{memberID}/approve", h.Approve)
-		r.Post("/members/{memberID}/reject", h.Reject)
-	})
+	// Rute dibuat rata (tanpa sub-router bersarang) supaya modul lain, mis. draw,
+	// bisa mendaftarkan rute di bawah /{id}/... pada router yang sama.
+	r.Get("/{id}", h.Get)
+	r.Get("/{id}/members", h.Members)
+	r.Post("/{id}/members/{memberID}/approve", h.Approve)
+	r.Post("/{id}/members/{memberID}/reject", h.Reject)
 }
 
 type createRequest struct {
@@ -93,7 +93,7 @@ func (h *Handler) Join(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
-	id, ok := uuidParam(w, r, "id")
+	id, ok := httpx.URLUUID(w, r, "id")
 	if !ok {
 		return
 	}
@@ -106,7 +106,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Members(w http.ResponseWriter, r *http.Request) {
-	id, ok := uuidParam(w, r, "id")
+	id, ok := httpx.URLUUID(w, r, "id")
 	if !ok {
 		return
 	}
@@ -128,11 +128,11 @@ func (h *Handler) Reject(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) decide(w http.ResponseWriter, r *http.Request, op, resultStatus string,
 	act func(ctx context.Context, userID, groupID, memberID string) error) {
-	groupID, ok := uuidParam(w, r, "id")
+	groupID, ok := httpx.URLUUID(w, r, "id")
 	if !ok {
 		return
 	}
-	memberID, ok := uuidParam(w, r, "memberID")
+	memberID, ok := httpx.URLUUID(w, r, "memberID")
 	if !ok {
 		return
 	}
@@ -141,15 +141,6 @@ func (h *Handler) decide(w http.ResponseWriter, r *http.Request, op, resultStatu
 		return
 	}
 	httpx.JSON(w, http.StatusOK, map[string]string{"status": resultStatus})
-}
-
-func uuidParam(w http.ResponseWriter, r *http.Request, name string) (string, bool) {
-	v := chi.URLParam(r, name)
-	if !httpx.IsUUID(v) {
-		httpx.Error(w, http.StatusNotFound, "tidak ditemukan")
-		return "", false
-	}
-	return v, true
 }
 
 // fail menerjemahkan error domain menjadi respons HTTP. notFoundMsg mengganti
