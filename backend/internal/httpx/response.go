@@ -11,6 +11,12 @@ import (
 	"net/http"
 )
 
+// ValidationError adalah kesalahan input dari pengguna (dipetakan ke HTTP 400).
+// Dipakai bersama oleh semua modul.
+type ValidationError string
+
+func (e ValidationError) Error() string { return string(e) }
+
 func JSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

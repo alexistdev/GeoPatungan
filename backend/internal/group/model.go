@@ -9,6 +9,8 @@ package group
 import (
 	"errors"
 	"time"
+
+	"github.com/alexistdev/geopatungan/internal/httpx"
 )
 
 var (
@@ -22,9 +24,8 @@ var (
 )
 
 // ValidationError adalah kesalahan input dari pengguna (dipetakan ke HTTP 400).
-type ValidationError string
-
-func (e ValidationError) Error() string { return string(e) }
+// Alias dari httpx.ValidationError agar semua modul berbagi satu tipe.
+type ValidationError = httpx.ValidationError
 
 // Semua nominal uang dalam rupiah utuh (BIGINT), tanpa pecahan.
 type Group struct {

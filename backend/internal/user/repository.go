@@ -93,6 +93,22 @@ func (r *Repository) Create(ctx context.Context, u *User) error {
 	return tx.Commit(ctx)
 }
 
+// SetRole mengubah peran pengguna berdasarkan email (dipakai CLI admin).
+// ErrNotFound jika email tidak terdaftar.
+func (r *Repository) SetRole(ctx context.Context, email, role string) error {
+	if role != "admin" && role != "owner" && role != "member" {
+		return errors.New("peran tidak dikenal")
+	}
+	tag, err := r.db.Exec(ctx, `UPDATE users SET role = $2 WHERE email = lower($1)`, email, role)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func mapErr(err error) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" { // unique_violation
