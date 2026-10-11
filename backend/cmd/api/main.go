@@ -13,10 +13,13 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chimw "github.com/go-chi/chi/v5/middleware"
 
+	"github.com/alexistdev/geopatungan/internal/auth"
 	"github.com/alexistdev/geopatungan/internal/config"
 	"github.com/alexistdev/geopatungan/internal/database"
+	"github.com/alexistdev/geopatungan/internal/middleware"
+	"github.com/alexistdev/geopatungan/internal/user"
 )
 
 func main() {
@@ -29,8 +32,13 @@ func main() {
 	}
 	defer db.Close()
 
+	userRepo := user.NewRepository(db)
+	tokens := auth.NewTokenManager(cfg.JWTSecret, cfg.JWTTTL)
+	authHandler := auth.NewHandler(auth.NewService(userRepo, tokens))
+	userHandler := user.NewHandler(userRepo)
+
 	r := chi.NewRouter()
-	r.Use(middleware.Logger, middleware.Recoverer)
+	r.Use(chimw.Logger, chimw.Recoverer)
 
 	r.Get("/health", func(w http.ResponseWriter, req *http.Request) {
 		c, cancel := context.WithTimeout(req.Context(), 2*time.Second)
@@ -43,6 +51,21 @@ func main() {
 		w.Write([]byte(`{"status":"ok"}`))
 	})
 
+	r.Route("/api", func(r chi.Router) {
+		r.Post("/auth/register", authHandler.Register)
+		r.Post("/auth/login", authHandler.Login)
+
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.Authenticate(tokens))
+			r.Get("/me", userHandler.Me)
+		})
+	})
+
+	srv := &http.Server{
+		Addr:              ":" + cfg.Port,
+		Handler:           r,
+		ReadHeaderTimeout: 10 * time.Second,
+	}
 	log.Printf("GeoPatungan API jalan di :%s", cfg.Port)
-	log.Fatal(http.ListenAndServe(":"+cfg.Port, r))
+	log.Fatal(srv.ListenAndServe())
 }
