@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -176,5 +177,48 @@ func TestCreateRollsBackWhenReferralInsertImpossible(t *testing.T) {
 	}
 	if n != 0 {
 		t.Errorf("ada %d user tersisa; transaksi seharusnya dibatalkan seluruhnya", n)
+	}
+}
+
+func TestSetRole(t *testing.T) {
+	repo, pool, prefix := newTestRepo(t)
+	ctx := context.Background()
+
+	u := newUser(prefix, "a", 1, nil)
+	if err := repo.Create(ctx, u); err != nil {
+		t.Fatal(err)
+	}
+	roleOf := func() string {
+		var r string
+		if err := pool.QueryRow(ctx, `SELECT role FROM users WHERE id = $1`, u.ID).Scan(&r); err != nil {
+			t.Fatal(err)
+		}
+		return r
+	}
+
+	if roleOf() != "member" {
+		t.Fatalf("peran awal = %s, want member", roleOf())
+	}
+	// email tidak peka huruf besar/kecil
+	if err := repo.SetRole(ctx, strings.ToUpper(u.Email), "admin"); err != nil {
+		t.Fatalf("promote: %v", err)
+	}
+	if roleOf() != "admin" {
+		t.Errorf("peran = %s, want admin", roleOf())
+	}
+	if err := repo.SetRole(ctx, u.Email, "member"); err != nil || roleOf() != "member" {
+		t.Errorf("demote: err=%v peran=%s", err, roleOf())
+	}
+
+	if err := repo.SetRole(ctx, prefix+"-tidak-ada@example.com", "admin"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("email tidak ada: err = %v, want ErrNotFound", err)
+	}
+	for _, bad := range []string{"", "root", "ADMIN", "admin; DROP TABLE users"} {
+		if err := repo.SetRole(ctx, u.Email, bad); err == nil {
+			t.Errorf("peran %q seharusnya ditolak", bad)
+		}
+	}
+	if roleOf() != "member" {
+		t.Errorf("peran berubah oleh input tidak valid: %s", roleOf())
 	}
 }

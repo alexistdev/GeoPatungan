@@ -53,6 +53,8 @@ func NewEnv(t *testing.T) *Env {
 		Prefix: fmt.Sprintf("tu-%d", time.Now().UnixNano())}
 	t.Cleanup(func() {
 		like := e.Prefix + "-%"
+		// audit milik pengguna uji dihapus sebelum penggunanya (FK-nya SET NULL, bukan CASCADE)
+		_, _ = pool.Exec(ctx, `DELETE FROM audit_logs WHERE actor_id IN (SELECT id FROM users WHERE email LIKE $1)`, like)
 		// grup dihapus dulu (anggota, putaran, iuran ikut via CASCADE), baru user uji.
 		_, _ = pool.Exec(ctx, `DELETE FROM groups WHERE owner_id IN (SELECT id FROM users WHERE email LIKE $1)`, like)
 		_, _ = pool.Exec(ctx, `DELETE FROM group_members WHERE user_id IN (SELECT id FROM users WHERE email LIKE $1)`, like)
@@ -74,6 +76,14 @@ func (e *Env) NewUser(name string) string {
 	if err != nil {
 		e.T.Fatalf("buat user: %v", err)
 	}
+	return id
+}
+
+// NewAdmin membuat pengguna ber-peran admin.
+func (e *Env) NewAdmin(name string) string {
+	e.T.Helper()
+	id := e.NewUser(name)
+	e.Exec(`UPDATE users SET role = 'admin' WHERE id = $1`, id)
 	return id
 }
 
