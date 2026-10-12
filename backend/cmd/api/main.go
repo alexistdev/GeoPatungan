@@ -25,6 +25,7 @@ import (
 	"github.com/alexistdev/geopatungan/internal/round"
 	"github.com/alexistdev/geopatungan/internal/settings"
 	"github.com/alexistdev/geopatungan/internal/user"
+	"github.com/alexistdev/geopatungan/internal/wallet"
 )
 
 func main() {
@@ -47,6 +48,7 @@ func main() {
 	drawHandler := draw.NewHandler(draw.NewService(groupRepo, draw.NewRepository(db), levels))
 	roundHandler := round.NewHandler(round.NewService(round.NewRepository(db), groupRepo))
 	settingsHandler := settings.NewHandler(settings.NewService(settings.NewRepository(db)))
+	walletHandler := wallet.NewHandler(wallet.NewService(wallet.NewRepository(db)))
 	contributionHandler := contribution.NewHandler(contribution.NewService(contribution.NewRepository(db), groupRepo))
 
 	r := chi.NewRouter()
@@ -72,9 +74,11 @@ func main() {
 			r.Get("/me", userHandler.Me)
 			r.Get("/me/contributions", contributionHandler.Mine)
 			r.Get("/payment-info", settingsHandler.PaymentInfo)
+			r.Route("/wallet", walletHandler.Routes)
 			r.Route("/admin", func(r chi.Router) {
 				r.Use(middleware.RequireRole(userRepo, "admin"))
 				settingsHandler.AdminRoutes(r)
+				walletHandler.AdminRoutes(r)
 			})
 			r.Route("/groups", func(r chi.Router) {
 				groupHandler.Routes(r)
