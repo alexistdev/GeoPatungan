@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth';
 import { errorMessage } from '../../core/errors';
@@ -20,7 +21,7 @@ function pending<T>(): Section<T> {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [RupiahPipe, DatePipe],
+  imports: [RupiahPipe, DatePipe, RouterLink],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })

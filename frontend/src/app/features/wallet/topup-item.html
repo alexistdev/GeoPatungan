@@ -1,0 +1,85 @@
+<article class="card">
+  <div class="row spread">
+    <strong>Top-up {{ topup().amount | rupiah }}</strong>
+    <span class="badge" [class]="label().tone">{{ label().text }}</span>
+  </div>
+  <p class="small muted">Dibuat {{ topup().created_at | date: 'd MMM y, HH:mm' }}</p>
+
+  @if (error(); as msg) {
+    <div class="alert error" role="alert">{{ msg }}</div>
+  }
+
+  @if (isOpen()) {
+    <div class="instructions stack">
+      <div>
+        <div class="small muted">Transfer tepat sejumlah</div>
+        <div class="transfer-amount money">{{ topup().transfer_amount | rupiah }}</div>
+        <div class="small muted">Sudah termasuk kode unik {{ topup().unique_code }} agar transfer Anda mudah dikenali.</div>
+      </div>
+      <div>
+        <div class="small muted">Ke salah satu rekening</div>
+        @for (b of banks(); track b.id) {
+          <div class="bank">
+            <strong>{{ b.bank_name }}</strong> · <span class="mono">{{ b.account_number }}</span>
+            <div class="small">a.n. {{ b.account_holder }}</div>
+            @if (b.notes) {
+              <div class="small muted">{{ b.notes }}</div>
+            }
+          </div>
+        } @empty {
+          <p class="alert warn">Rekening tujuan belum diatur admin. Hubungi admin sebelum mentransfer.</p>
+        }
+      </div>
+      <p class="small muted">Berlaku sampai {{ topup().expires_at | date: 'd MMM y, HH:mm' }}.</p>
+    </div>
+
+    @if (topup().status === 'submitted' && !confirming()) {
+      <p class="alert info">
+        Konfirmasi diterima dari {{ topup().sender_name }} ({{ topup().sender_bank }}). Admin akan memverifikasi transfer Anda.
+      </p>
+    }
+
+    @if (confirming()) {
+      <form class="inline stack" [formGroup]="form" (ngSubmit)="confirm()" novalidate>
+        <label class="field">
+          <span>Nama pemilik rekening pengirim</span>
+          <input type="text" formControlName="sender_name" autocomplete="off" />
+          @if (form.controls.sender_name.touched && form.controls.sender_name.invalid) {
+            <p class="err">2 sampai 100 karakter.</p>
+          }
+        </label>
+        <label class="field">
+          <span>Bank pengirim</span>
+          <input type="text" formControlName="sender_bank" autocomplete="off" />
+          @if (form.controls.sender_bank.touched && form.controls.sender_bank.invalid) {
+            <p class="err">2 sampai 50 karakter.</p>
+          }
+        </label>
+        <label class="field">
+          <span>Catatan (opsional)</span>
+          <input type="text" formControlName="note" autocomplete="off" />
+          @if (form.controls.note.invalid) {
+            <p class="err">Maksimal 200 karakter.</p>
+          }
+        </label>
+        <div class="row">
+          <button class="btn primary" type="submit" [disabled]="busy()">{{ busy() ? 'Mengirim…' : 'Kirim konfirmasi' }}</button>
+          <button class="btn" type="button" (click)="confirming.set(false)" [disabled]="busy()">Batal</button>
+        </div>
+      </form>
+    } @else {
+      <div class="row inline">
+        <button class="btn primary" type="button" (click)="openConfirm()">
+          {{ topup().status === 'submitted' ? 'Ubah keterangan' : 'Saya sudah transfer' }}
+        </button>
+        @if (topup().status === 'pending') {
+          <button class="btn danger" type="button" (click)="cancel()" [disabled]="busy()">Batalkan</button>
+        }
+      </div>
+    }
+  } @else if (topup().status === 'approved') {
+    <p class="small">Saldo ditambahkan: <strong class="money">{{ topup().received_amount | rupiah }}</strong></p>
+  } @else if (topup().status === 'rejected' && topup().review_note) {
+    <p class="alert error">Alasan: {{ topup().review_note }}</p>
+  }
+</article>

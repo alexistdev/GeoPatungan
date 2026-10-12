@@ -1,0 +1,47 @@
+<div class="page">
+  <h1>Dompet</h1>
+
+  @if (error(); as msg) {
+    <div class="alert error" role="alert">{{ msg }}</div>
+  }
+
+  <section class="card balance" aria-labelledby="h-saldo">
+    <h2 id="h-saldo">Saldo</h2>
+    <p class="big money">{{ balance() === null ? '…' : (balance() | rupiah) }}</p>
+    <div class="row">
+      <a class="btn primary" routerLink="/dompet/isi-saldo">Isi saldo</a>
+      <a class="btn" routerLink="/dompet/tarik">Tarik dana</a>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-riwayat">
+    <h2 id="h-riwayat">Riwayat transaksi</h2>
+    @if (loading()) {
+      <p class="muted">Memuat…</p>
+    } @else if (entries().length === 0) {
+      <p class="muted">Belum ada transaksi.</p>
+    } @else {
+      <ul class="list">
+        @for (e of entries(); track e.id) {
+          <li class="row spread">
+            <div>
+              <div>{{ e.description || e.ref_type }}</div>
+              <div class="small muted">{{ e.created_at | date: 'd MMM y, HH:mm' }}</div>
+            </div>
+            <div class="right">
+              <div class="money" [class.plus]="e.amount > 0" [class.minus]="e.amount < 0">
+                {{ e.amount > 0 ? '+' : '' }}{{ e.amount | rupiah }}
+              </div>
+              <div class="small muted">Saldo {{ e.balance_after | rupiah }}</div>
+            </div>
+          </li>
+        }
+      </ul>
+      @if (next() !== null) {
+        <button type="button" class="btn block" (click)="more()" [disabled]="loadingMore()">
+          {{ loadingMore() ? 'Memuat…' : 'Muat lebih banyak' }}
+        </button>
+      }
+    }
+  </section>
+</div>

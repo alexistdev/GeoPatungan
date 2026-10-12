@@ -1,0 +1,88 @@
+<div class="page">
+  <a class="back" routerLink="/dompet">← Dompet</a>
+  <h1>Tarik dana</h1>
+  <p class="muted">
+    Dana langsung ditahan saat Anda mengajukan, lalu admin mentransfer ke rekening Anda.
+    Saldo saat ini: <strong class="money">{{ balance() === null ? '…' : (balance() | rupiah) }}</strong>
+  </p>
+
+  @if (error(); as msg) {
+    <div class="alert error" role="alert">{{ msg }}</div>
+  }
+
+  <form class="card stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label class="field">
+      <span>Nominal penarikan (Rp)</span>
+      <input type="number" formControlName="amount" inputmode="numeric" step="1" />
+      @if (info(); as i) {
+        <p class="hint">Minimal {{ i.withdraw_min_amount | rupiah }}.</p>
+      }
+      @if (form.controls.amount.touched && form.controls.amount.invalid) {
+        <p class="err">Nominal kurang dari batas minimal.</p>
+      }
+    </label>
+    <label class="field">
+      <span>Nama bank</span>
+      <input type="text" formControlName="bank_name" autocomplete="off" />
+      @if (form.controls.bank_name.touched && form.controls.bank_name.invalid) {
+        <p class="err">2 sampai 50 karakter.</p>
+      }
+    </label>
+    <label class="field">
+      <span>Nomor rekening</span>
+      <input type="text" formControlName="account_number" inputmode="numeric" autocomplete="off" />
+      @if (form.controls.account_number.touched && form.controls.account_number.invalid) {
+        <p class="err">5 sampai 30 digit angka.</p>
+      }
+    </label>
+    <label class="field">
+      <span>Nama pemilik rekening</span>
+      <input type="text" formControlName="account_holder" autocomplete="off" />
+      @if (form.controls.account_holder.touched && form.controls.account_holder.invalid) {
+        <p class="err">2 sampai 100 karakter.</p>
+      }
+    </label>
+    <label class="field">
+      <span>Catatan (opsional)</span>
+      <input type="text" formControlName="note" autocomplete="off" />
+      @if (form.controls.note.invalid) {
+        <p class="err">Maksimal 200 karakter.</p>
+      }
+    </label>
+    <button class="btn primary" type="submit" [disabled]="submitting() || !info()">
+      {{ submitting() ? 'Mengajukan…' : 'Ajukan penarikan' }}
+    </button>
+  </form>
+
+  <h2 class="spaced">Riwayat penarikan</h2>
+  @if (loading()) {
+    <p class="muted">Memuat…</p>
+  } @else if (items().length === 0) {
+    <p class="card muted">Belum ada penarikan.</p>
+  } @else {
+    <div class="stack">
+      @for (w of items(); track w.id) {
+        <article class="card">
+          <div class="row spread">
+            <strong class="money">{{ w.amount | rupiah }}</strong>
+            <span class="badge" [class]="label(w.status).tone">{{ label(w.status).text }}</span>
+          </div>
+          <p class="small muted">
+            {{ w.bank_name }} · {{ w.account_number }} a.n. {{ w.account_holder }} · {{ w.created_at | date: 'd MMM y, HH:mm' }}
+          </p>
+          @if (w.status === 'completed' && w.transfer_reference) {
+            <p class="small">Referensi transfer: <span class="mono">{{ w.transfer_reference }}</span></p>
+          }
+          @if (w.status === 'rejected' && w.review_note) {
+            <p class="alert error">Alasan: {{ w.review_note }}</p>
+          }
+          @if (w.status === 'pending') {
+            <button class="btn danger" type="button" (click)="cancel(w)" [disabled]="cancelling() !== null">
+              {{ cancelling() === w.id ? 'Membatalkan…' : 'Batalkan' }}
+            </button>
+          }
+        </article>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,38 @@
+<div class="page">
+  <a class="back" routerLink="/dompet">← Dompet</a>
+  <h1>Isi saldo</h1>
+  <p class="muted">Transfer bank manual. Saldo bertambah setelah admin memverifikasi transfer Anda.</p>
+
+  @if (error(); as msg) {
+    <div class="alert error" role="alert">{{ msg }}</div>
+  }
+
+  <form class="card stack" [formGroup]="form" (ngSubmit)="create()" novalidate>
+    <label class="field">
+      <span>Nominal top-up (Rp)</span>
+      <input type="number" formControlName="amount" inputmode="numeric" step="1" />
+      @if (info(); as i) {
+        <p class="hint">Minimal {{ i.topup_min_amount | rupiah }}, maksimal {{ i.topup_max_amount | rupiah }}.</p>
+      }
+      @if (form.controls.amount.touched && form.controls.amount.invalid) {
+        <p class="err">Nominal di luar batas yang diizinkan.</p>
+      }
+    </label>
+    <button class="btn primary" type="submit" [disabled]="creating() || !info()">
+      {{ creating() ? 'Membuat…' : 'Buat permintaan top-up' }}
+    </button>
+  </form>
+
+  <h2 class="spaced">Permintaan Anda</h2>
+  @if (loading()) {
+    <p class="muted">Memuat…</p>
+  } @else if (topups().length === 0) {
+    <p class="card muted">Belum ada permintaan top-up.</p>
+  } @else {
+    <div class="stack">
+      @for (t of topups(); track t.id) {
+        <app-topup-item [topup]="t" [banks]="activeBanks()" (updated)="replace($event)" />
+      }
+    </div>
+  }
+</div>

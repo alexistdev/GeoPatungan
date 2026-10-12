@@ -3,6 +3,7 @@
     <a class="brand" routerLink="/">GeoPatungan</a>
     <nav aria-label="Menu utama">
       <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Beranda</a>
+      <a routerLink="/dompet" routerLinkActive="active">Dompet</a>
       <a routerLink="/notifikasi" routerLinkActive="active">
         Notifikasi
         @if (notifications.unread() > 0) {

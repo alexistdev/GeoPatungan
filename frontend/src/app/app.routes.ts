@@ -31,6 +31,21 @@ export const routes: Routes = [
         loadComponent: () => import('./features/notifications/notifications').then((m) => m.Notifications),
         title: 'Notifikasi - GeoPatungan',
       },
+      {
+        path: 'dompet',
+        loadComponent: () => import('./features/wallet/wallet-page').then((m) => m.WalletPage),
+        title: 'Dompet - GeoPatungan',
+      },
+      {
+        path: 'dompet/isi-saldo',
+        loadComponent: () => import('./features/wallet/topup-page').then((m) => m.TopupPage),
+        title: 'Isi saldo - GeoPatungan',
+      },
+      {
+        path: 'dompet/tarik',
+        loadComponent: () => import('./features/wallet/withdraw-page').then((m) => m.WithdrawPage),
+        title: 'Tarik dana - GeoPatungan',
+      },
     ],
   },
   { path: '**', redirectTo: '' },

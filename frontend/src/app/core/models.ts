@@ -86,3 +86,79 @@ export interface NotificationPage {
   next_before: number | null;
   unread_count: number;
 }
+
+export interface LedgerEntry {
+  id: number;
+  amount: number;
+  balance_after: number;
+  ref_type: string;
+  ref_id: string;
+  description: string;
+  created_at: string;
+}
+
+export interface LedgerPage {
+  entries: LedgerEntry[];
+  next_before: number | null;
+}
+
+export interface BankAccount {
+  id: string;
+  bank_name: string;
+  account_number: string;
+  account_holder: string;
+  notes: string;
+  is_active: boolean;
+}
+
+export interface PaymentInfo {
+  bank_accounts: BankAccount[];
+  topup_min_amount: number;
+  topup_max_amount: number;
+  withdraw_min_amount: number;
+  platform_fee_bps: number;
+  topup_expiry_hours: number;
+}
+
+export type TopupStatus = 'pending' | 'submitted' | 'approved' | 'rejected' | 'cancelled' | 'expired';
+
+export interface Topup {
+  id: string;
+  amount: number;
+  unique_code: number;
+  transfer_amount: number;
+  status: TopupStatus;
+  sender_name: string;
+  sender_bank: string;
+  note: string;
+  submitted_at: string | null;
+  expires_at: string;
+  reviewed_at: string | null;
+  review_note: string;
+  received_amount: number | null;
+  created_at: string;
+}
+
+export type WithdrawalStatus = 'pending' | 'completed' | 'rejected' | 'cancelled';
+
+export interface Withdrawal {
+  id: string;
+  amount: number;
+  bank_name: string;
+  account_number: string;
+  account_holder: string;
+  note: string;
+  status: WithdrawalStatus;
+  transfer_reference: string;
+  review_note: string;
+  reviewed_at: string | null;
+  created_at: string;
+}
+
+export interface WithdrawalInput {
+  amount: number;
+  bank_name: string;
+  account_number: string;
+  account_holder: string;
+  note: string;
+}
