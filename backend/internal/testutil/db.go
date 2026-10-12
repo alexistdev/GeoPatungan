@@ -21,6 +21,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/alexistdev/geopatungan/internal/group"
+	"github.com/alexistdev/geopatungan/internal/user"
 	"github.com/alexistdev/geopatungan/internal/wallet"
 )
 
@@ -64,6 +65,10 @@ func NewEnv(t *testing.T) *Env {
 	t.Cleanup(func() {
 		like := e.Prefix + "-%"
 		cleanupLedger(ctx, t, pool, like)
+		_, _ = pool.Exec(ctx, `DELETE FROM referral_commissions WHERE beneficiary_id IN (SELECT id FROM users WHERE email LIKE $1)
+		                          OR source_user_id IN (SELECT id FROM users WHERE email LIKE $1)`, like)
+		_, _ = pool.Exec(ctx, `DELETE FROM referrals WHERE descendant_id IN (SELECT id FROM users WHERE email LIKE $1)
+		                          OR ancestor_id IN (SELECT id FROM users WHERE email LIKE $1)`, like)
 		_, _ = pool.Exec(ctx, `DELETE FROM kyc_requests WHERE user_id IN (SELECT id FROM users WHERE email LIKE $1)`, like)
 		_, _ = pool.Exec(ctx, `DELETE FROM withdrawals WHERE user_id IN (SELECT id FROM users WHERE email LIKE $1)`, like)
 		_, _ = pool.Exec(ctx, `DELETE FROM topups WHERE user_id IN (SELECT id FROM users WHERE email LIKE $1)`, like)
@@ -131,6 +136,34 @@ func (e *Env) NewUser(name string) string {
 		e.T.Fatalf("buat user: %v", err)
 	}
 	return id
+}
+
+// NewReferredUser membuat pengguna yang mendaftar dengan kode referral referrerID, lewat
+// user.Repository.Create (jalur yang sama dengan registrasi nyata), sehingga tabel closure
+// `referrals` (maksimal 4 level) terbentuk oleh kode produksi, bukan oleh tiruan di tes.
+func (e *Env) NewReferredUser(name, referrerID string) string {
+	e.T.Helper()
+	e.seq++
+	u := &user.User{
+		Name:         name,
+		Phone:        fmt.Sprintf("%s-%d", e.Prefix, e.seq),
+		Email:        fmt.Sprintf("%s-%s-%d@example.com", e.Prefix, name, e.seq),
+		PasswordHash: "x",
+		ReferralCode: fmt.Sprintf("%s-%d", e.Prefix, e.seq),
+		ReferredBy:   &referrerID,
+	}
+	if err := user.NewRepository(e.Pool).Create(context.Background(), u); err != nil {
+		e.T.Fatalf("buat pengguna ber-referral: %v", err)
+	}
+	return u.ID
+}
+
+// Verify menandai pengguna terverifikasi KYC.
+func (e *Env) Verify(userIDs ...string) {
+	e.T.Helper()
+	for _, id := range userIDs {
+		e.Exec(`UPDATE users SET kyc_status = 'verified' WHERE id = $1`, id)
+	}
 }
 
 // NewAdmin membuat pengguna ber-peran admin.
