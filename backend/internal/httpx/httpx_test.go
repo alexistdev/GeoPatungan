@@ -135,3 +135,14 @@ func TestDecodeOptional(t *testing.T) {
 		})
 	}
 }
+
+func TestRupiah(t *testing.T) {
+	for n, want := range map[int64]string{
+		0: "0", 7: "7", 999: "999", 1_000: "1.000", 10_000: "10.000", 100_000_000: "100.000.000",
+		1_234_567: "1.234.567", 1_000_000_000: "1.000.000.000", -500: "-500", -1_500: "-1.500", -1_234_567: "-1.234.567",
+	} {
+		if got := Rupiah(n); got != want {
+			t.Errorf("Rupiah(%d) = %q, want %q", n, got, want)
+		}
+	}
+}

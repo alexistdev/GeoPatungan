@@ -122,15 +122,6 @@ const (
 
 // ---- pembantu murni --------------------------------------------------------
 
-func TestRupiah(t *testing.T) {
-	for n, want := range map[int64]string{0: "0", 7: "7", 999: "999", 1_000: "1.000", 10_000: "10.000",
-		100_000_000: "100.000.000", 1_234_567: "1.234.567", 1_000_000_000: "1.000.000.000"} {
-		if got := rupiah(n); got != want {
-			t.Errorf("rupiah(%d) = %q, want %q", n, got, want)
-		}
-	}
-}
-
 func TestRandomCodes(t *testing.T) {
 	for _, n := range []int{1, 25, 500, 999} {
 		codes, err := randomCodes(bytesReader(), n)
