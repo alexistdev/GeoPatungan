@@ -93,3 +93,45 @@ func TestUserContext(t *testing.T) {
 		t.Error("context kosong seharusnya mengembalikan string kosong, bukan panic")
 	}
 }
+
+func TestDecodeOptional(t *testing.T) {
+	type payload struct {
+		Note string `json:"note"`
+	}
+	t.Run("body kosong dianggap sah", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		var p payload
+		if !DecodeOptional(rec, httptest.NewRequest(http.MethodPost, "/", strings.NewReader("")), &p) {
+			t.Fatal("body kosong seharusnya diterima")
+		}
+		if p.Note != "" || rec.Body.Len() != 0 {
+			t.Errorf("p=%+v body=%q", p, rec.Body)
+		}
+	})
+	t.Run("objek kosong dan terisi", func(t *testing.T) {
+		for body, want := range map[string]string{`{}`: "", `{"note":"ok"}`: "ok"} {
+			rec := httptest.NewRecorder()
+			var p payload
+			if !DecodeOptional(rec, httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body)), &p) || p.Note != want {
+				t.Errorf("body %s: p=%+v", body, p)
+			}
+		}
+	})
+	for name, body := range map[string]string{
+		"JSON rusak":    `{"note":`,
+		"field asing":   `{"note":"x","role":"admin"}`,
+		"bukan objek":   `[1,2]`,
+		"terlalu besar": `{"note":"` + strings.Repeat("a", 2<<20) + `"}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			var p payload
+			if DecodeOptional(rec, httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body)), &p) {
+				t.Fatal("seharusnya ditolak")
+			}
+			if rec.Code != http.StatusBadRequest {
+				t.Errorf("status = %d, want 400", rec.Code)
+			}
+		})
+	}
+}

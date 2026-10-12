@@ -56,6 +56,7 @@ func NewEnv(t *testing.T) *Env {
 	t.Cleanup(func() {
 		like := e.Prefix + "-%"
 		cleanupLedger(ctx, t, pool, like)
+		_, _ = pool.Exec(ctx, `DELETE FROM topups WHERE user_id IN (SELECT id FROM users WHERE email LIKE $1)`, like)
 		// audit milik pengguna uji dihapus sebelum penggunanya (FK-nya SET NULL, bukan CASCADE)
 		_, _ = pool.Exec(ctx, `DELETE FROM audit_logs WHERE actor_id IN (SELECT id FROM users WHERE email LIKE $1)`, like)
 		// grup dihapus dulu (anggota, putaran, iuran ikut via CASCADE), baru user uji.
