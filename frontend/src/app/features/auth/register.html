@@ -1,0 +1,54 @@
+<main class="auth">
+  <h1>Buat akun</h1>
+  <p class="muted">Gabung arisan dengan aman dan transparan.</p>
+
+  <form class="card stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (error(); as msg) {
+      <div class="alert error" role="alert">{{ msg }}</div>
+    }
+
+    <label class="field">
+      <span>Nama lengkap</span>
+      <input type="text" formControlName="name" autocomplete="name" />
+      @if (form.controls.name.touched && form.controls.name.invalid) {
+        <p class="err">Nama wajib diisi (maksimal 100 karakter).</p>
+      }
+    </label>
+
+    <label class="field">
+      <span>Nomor telepon</span>
+      <input type="tel" formControlName="phone" autocomplete="tel" inputmode="tel" />
+      @if (form.controls.phone.touched && form.controls.phone.invalid) {
+        <p class="err">9–15 digit, boleh diawali +.</p>
+      }
+    </label>
+
+    <label class="field">
+      <span>Email</span>
+      <input type="email" formControlName="email" autocomplete="email" inputmode="email" />
+      @if (form.controls.email.touched && form.controls.email.invalid) {
+        <p class="err">Masukkan email yang valid.</p>
+      }
+    </label>
+
+    <label class="field">
+      <span>Kata sandi</span>
+      <input type="password" formControlName="password" autocomplete="new-password" />
+      <p class="hint">8 sampai 72 karakter.</p>
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <p class="err">Kata sandi harus 8 sampai 72 karakter.</p>
+      }
+    </label>
+
+    <label class="field">
+      <span>Kode referral (opsional)</span>
+      <input type="text" formControlName="referral_code" autocapitalize="characters" />
+    </label>
+
+    <button class="btn primary block" type="submit" [disabled]="loading()">
+      {{ loading() ? 'Memproses…' : 'Daftar' }}
+    </button>
+  </form>
+
+  <p class="muted small">Sudah punya akun? <a routerLink="/masuk">Masuk</a></p>
+</main>

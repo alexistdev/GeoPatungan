@@ -1,0 +1,23 @@
+<header class="top">
+  <div class="bar">
+    <a class="brand" routerLink="/">GeoPatungan</a>
+    <nav aria-label="Menu utama">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Beranda</a>
+      <a routerLink="/notifikasi" routerLinkActive="active">
+        Notifikasi
+        @if (notifications.unread() > 0) {
+          <span class="count" [attr.aria-label]="notifications.unread() + ' belum dibaca'">
+            {{ notifications.unread() > 99 ? '99+' : notifications.unread() }}
+          </span>
+        }
+      </a>
+    </nav>
+    <div class="who">
+      <span class="name">{{ auth.user()?.name }}</span>
+      <button type="button" class="btn" (click)="logout()">Keluar</button>
+    </div>
+  </div>
+</header>
+<main>
+  <router-outlet />
+</main>

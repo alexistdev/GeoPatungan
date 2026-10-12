@@ -1,0 +1,81 @@
+<div class="page">
+  <h1>Halo, {{ auth.user()?.name }}</h1>
+  <p class="muted">
+    Kode referral Anda: <strong>{{ auth.user()?.referral_code }}</strong> ·
+    <span class="badge" [class.ok]="auth.user()?.kyc_status === 'verified'">{{ kycLabel(auth.user()?.kyc_status) }}</span>
+  </p>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="h-saldo">
+      <h2 id="h-saldo">Saldo</h2>
+      @if (wallet().loading) {
+        <p class="muted">Memuat…</p>
+      } @else if (wallet().error; as msg) {
+        <p class="alert error" role="alert">{{ msg }}</p>
+      } @else {
+        <p class="big money">{{ wallet().data?.balance | rupiah }}</p>
+      }
+    </section>
+
+    <section class="card" aria-labelledby="h-rep">
+      <h2 id="h-rep">Reputasi</h2>
+      @if (reputation().loading) {
+        <p class="muted">Memuat…</p>
+      } @else if (reputation().error; as msg) {
+        <p class="alert error" role="alert">{{ msg }}</p>
+      } @else if (reputation().data; as rep) {
+        <p>
+          <span class="badge primary">Level {{ rep.level.rank }}</span>
+          <strong> {{ rep.level.name }}</strong>
+        </p>
+        <p class="small muted">
+          Peluang kocokan ×{{ rep.level.draw_weight }} · {{ rep.stats.completed_cycles }} arisan tuntas ·
+          {{ rep.stats.late_total }} keterlambatan
+        </p>
+        @if (rep.next_level; as next) {
+          <p class="small"><strong>Menuju {{ next.level.name }}:</strong></p>
+          <ul class="list small">
+            @for (r of next.requirements; track r.key) {
+              <li>
+                <span class="badge" [class.ok]="r.met" [class.warn]="!r.met">{{ r.met ? 'Terpenuhi' : 'Belum' }}</span>
+                {{ r.label }}
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="small muted">Anda sudah di level tertinggi.</p>
+        }
+      }
+    </section>
+  </div>
+
+  <section class="card dues" aria-labelledby="h-iuran">
+    <h2 id="h-iuran">Iuran yang harus dibayar</h2>
+    @if (dues().loading) {
+      <p class="muted">Memuat…</p>
+    } @else if (dues().error; as msg) {
+      <p class="alert error" role="alert">{{ msg }}</p>
+    } @else if (dues().data?.length === 0) {
+      <p class="muted">Tidak ada iuran yang menunggu. 🎉</p>
+    } @else {
+      <ul class="list">
+        @for (c of dues().data; track c.id) {
+          <li class="row spread">
+            <div>
+              <strong>{{ c.group_name }}</strong>
+              <div class="small muted">
+                Putaran {{ c.round_no }} · jatuh tempo {{ c.due_date | date: 'd MMM y' }}
+              </div>
+            </div>
+            <div class="right">
+              <div class="money">{{ total(c) | rupiah }}</div>
+              @if (c.overdue) {
+                <span class="badge danger">Terlambat</span>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>

@@ -1,0 +1,47 @@
+<div class="page">
+  <div class="row spread">
+    <h1>Notifikasi</h1>
+    <button type="button" class="btn" (click)="markAll()" [disabled]="service.unread() === 0">
+      Tandai semua dibaca
+    </button>
+  </div>
+
+  <div class="row tabs" role="group" aria-label="Filter">
+    <button type="button" class="btn" [class.primary]="!unreadOnly()" (click)="setFilter(false)">Semua</button>
+    <button type="button" class="btn" [class.primary]="unreadOnly()" (click)="setFilter(true)">
+      Belum dibaca ({{ service.unread() }})
+    </button>
+  </div>
+
+  @if (error(); as msg) {
+    <div class="alert error" role="alert">{{ msg }}</div>
+  }
+
+  @if (loading()) {
+    <p class="muted">Memuat…</p>
+  } @else if (items().length === 0) {
+    <p class="card muted">{{ unreadOnly() ? 'Tidak ada yang belum dibaca.' : 'Belum ada notifikasi.' }}</p>
+  } @else {
+    <ul class="list card">
+      @for (n of items(); track n.id) {
+        <li>
+          <button type="button" class="item" [class.unread]="!n.read" (click)="open(n)">
+            <span class="title">
+              @if (!n.read) {
+                <span class="dot" aria-label="Belum dibaca"></span>
+              }
+              {{ n.title }}
+            </span>
+            <span class="body">{{ n.body }}</span>
+            <span class="small muted">{{ n.created_at | date: 'd MMM y, HH:mm' }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+    @if (next() !== null) {
+      <button type="button" class="btn block" (click)="more()" [disabled]="loadingMore()">
+        {{ loadingMore() ? 'Memuat…' : 'Muat lebih banyak' }}
+      </button>
+    }
+  }
+</div>
