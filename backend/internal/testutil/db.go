@@ -12,6 +12,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/alexistdev/geopatungan/internal/group"
+	"github.com/alexistdev/geopatungan/internal/wallet"
 )
 
 // Env adalah lingkungan tes: koneksi database dan awalan unik per run, sehingga
@@ -53,6 +55,7 @@ func NewEnv(t *testing.T) *Env {
 		Prefix: fmt.Sprintf("tu-%d", time.Now().UnixNano())}
 	t.Cleanup(func() {
 		like := e.Prefix + "-%"
+		cleanupLedger(ctx, t, pool, like)
 		// audit milik pengguna uji dihapus sebelum penggunanya (FK-nya SET NULL, bukan CASCADE)
 		_, _ = pool.Exec(ctx, `DELETE FROM audit_logs WHERE actor_id IN (SELECT id FROM users WHERE email LIKE $1)`, like)
 		// grup dihapus dulu (anggota, putaran, iuran ikut via CASCADE), baru user uji.
@@ -194,4 +197,88 @@ func (e *Env) InTx(fn func(tx pgx.Tx) error) error {
 		return err
 	}
 	return tx.Commit(ctx)
+}
+
+// cleanupLedger menghapus seluruh catatan uang milik pengguna uji. Ledger sengaja tidak
+// bisa dihapus (trigger), jadi pembersihan memakai session_replication_role=replica
+// (butuh superuser; pada dev Docker pengguna geopatungan adalah superuser).
+//
+// Seluruh entry_group yang menyentuh dompet pengguna uji dihapus UTUH (termasuk sisi
+// dompet sistemnya), lalu saldo dompet sistem dihitung ulang dari ledger. Dompet sistem
+// dikunci lebih dulu (urutan id, sama seperti wallet.Post) supaya perhitungan ulang tidak
+// membaca keadaan basi saat paket tes lain sedang berjalan paralel.
+func cleanupLedger(ctx context.Context, t *testing.T, pool *pgxpool.Pool, like string) {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Logf("cleanup ledger: %v", err)
+		return
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	if _, err := tx.Exec(ctx, `SET LOCAL session_replication_role = replica`); err != nil {
+		t.Logf("cleanup ledger dilewati (butuh superuser): %v", err)
+		return
+	}
+	steps := []string{
+		`SELECT id FROM wallets WHERE type <> 'user' ORDER BY id FOR UPDATE`,
+		`DELETE FROM ledger_entries WHERE entry_group IN (
+		     SELECT l.entry_group FROM ledger_entries l JOIN wallets w ON w.id = l.wallet_id
+		      WHERE w.user_id IN (SELECT id FROM users WHERE email LIKE $1))`,
+		`UPDATE wallets w SET balance = COALESCE((SELECT SUM(amount) FROM ledger_entries l WHERE l.wallet_id = w.id), 0)
+		  WHERE w.type <> 'user'`,
+		`DELETE FROM wallets WHERE user_id IN (SELECT id FROM users WHERE email LIKE $1)`,
+	}
+	for _, sql := range steps {
+		var err error
+		if strings.Contains(sql, "$1") {
+			_, err = tx.Exec(ctx, sql, like)
+		} else {
+			_, err = tx.Exec(ctx, sql)
+		}
+		if err != nil {
+			t.Logf("cleanup ledger: %v", err)
+			return
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Logf("cleanup ledger commit: %v", err)
+	}
+}
+
+// FundUser menambah saldo dompet pengguna dari dompet "external" (seperti top-up yang disetujui).
+func (e *Env) FundUser(userID string, amount int64) {
+	e.T.Helper()
+	ctx := context.Background()
+	err := e.InTx(func(tx pgx.Tx) error {
+		uw, err := wallet.EnsureUserWallet(ctx, tx, userID)
+		if err != nil {
+			return err
+		}
+		ext, err := wallet.SystemWallet(ctx, tx, wallet.TypeExternal)
+		if err != nil {
+			return err
+		}
+		var ref string
+		if err := tx.QueryRow(ctx, `SELECT gen_random_uuid()::text`).Scan(&ref); err != nil {
+			return err
+		}
+		_, err = wallet.Post(ctx, tx, wallet.Ref{Type: "test_fund", ID: ref},
+			wallet.Leg{WalletID: ext, Amount: -amount}, wallet.Leg{WalletID: uw, Amount: amount})
+		return err
+	})
+	if err != nil {
+		e.T.Fatalf("FundUser: %v", err)
+	}
+}
+
+// Balance mengembalikan saldo dompet pengguna (0 jika belum punya dompet).
+func (e *Env) Balance(userID string) int64 {
+	e.T.Helper()
+	var b int64
+	err := e.Pool.QueryRow(context.Background(),
+		`SELECT COALESCE((SELECT balance FROM wallets WHERE user_id = $1), 0)`, userID).Scan(&b)
+	if err != nil {
+		e.T.Fatal(err)
+	}
+	return b
 }
