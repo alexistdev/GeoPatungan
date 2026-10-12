@@ -64,6 +64,7 @@ func NewEnv(t *testing.T) *Env {
 	t.Cleanup(func() {
 		like := e.Prefix + "-%"
 		cleanupLedger(ctx, t, pool, like)
+		_, _ = pool.Exec(ctx, `DELETE FROM withdrawals WHERE user_id IN (SELECT id FROM users WHERE email LIKE $1)`, like)
 		_, _ = pool.Exec(ctx, `DELETE FROM topups WHERE user_id IN (SELECT id FROM users WHERE email LIKE $1)`, like)
 		// audit milik pengguna uji dihapus sebelum penggunanya (FK-nya SET NULL, bukan CASCADE)
 		_, _ = pool.Exec(ctx, `DELETE FROM audit_logs WHERE actor_id IN (SELECT id FROM users WHERE email LIKE $1)`, like)
@@ -284,7 +285,7 @@ func (e *Env) InTx(fn func(tx pgx.Tx) error) error {
 func cleanupLedger(ctx context.Context, t *testing.T, pool *pgxpool.Pool, like string) {
 	tx, err := pool.Begin(ctx)
 	if err != nil {
-		t.Logf("cleanup ledger: %v", err)
+		t.Errorf("cleanup ledger gagal; data tes tertinggal: %v", err)
 		return
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
@@ -295,9 +296,15 @@ func cleanupLedger(ctx context.Context, t *testing.T, pool *pgxpool.Pool, like s
 	}
 	steps := []string{
 		`SELECT id FROM wallets WHERE type <> 'user' ORDER BY id FOR UPDATE`,
+		// Grup yang menyentuh dompet pengguna uji, ditambah grup yang TIDAK menyentuh dompet pengguna
+		// tetapi merupakan akibat peristiwa mereka: penyelesaian penarikan (holding -> external).
+		// Tanpa yang kedua, saldo holding hasil hitung ulang bisa negatif dan membatalkan pembersihan.
 		`DELETE FROM ledger_entries WHERE entry_group IN (
 		     SELECT l.entry_group FROM ledger_entries l JOIN wallets w ON w.id = l.wallet_id
-		      WHERE w.user_id IN (SELECT id FROM users WHERE email LIKE $1))`,
+		      WHERE w.user_id IN (SELECT id FROM users WHERE email LIKE $1)
+		     UNION
+		     SELECT entry_group FROM ledger_entries
+		      WHERE ref_id IN (SELECT id FROM withdrawals WHERE user_id IN (SELECT id FROM users WHERE email LIKE $1)))`,
 		`UPDATE wallets w SET balance = COALESCE((SELECT SUM(amount) FROM ledger_entries l WHERE l.wallet_id = w.id), 0)
 		  WHERE w.type <> 'user'`,
 		// Menghapus baris dari tengah riwayat dompet sistem membuat balance_after baris yang tersisa
@@ -317,12 +324,12 @@ func cleanupLedger(ctx context.Context, t *testing.T, pool *pgxpool.Pool, like s
 			_, err = tx.Exec(ctx, sql)
 		}
 		if err != nil {
-			t.Logf("cleanup ledger: %v", err)
+			t.Errorf("cleanup ledger gagal; data tes tertinggal: %v", err)
 			return
 		}
 	}
 	if err := tx.Commit(ctx); err != nil {
-		t.Logf("cleanup ledger commit: %v", err)
+		t.Errorf("cleanup ledger commit gagal; data tes tertinggal: %v", err)
 	}
 }
 
