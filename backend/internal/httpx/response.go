@@ -8,6 +8,8 @@ package httpx
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 )
 
@@ -34,6 +36,22 @@ func Decode(w http.ResponseWriter, r *http.Request, dst any) bool {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(dst); err != nil {
+		Error(w, http.StatusBadRequest, "body JSON tidak valid")
+		return false
+	}
+	return true
+}
+
+// DecodeOptional seperti Decode, tetapi body kosong dianggap sah (dst dibiarkan nol).
+// Untuk aksi yang parameternya semua opsional, mis. persetujuan tanpa catatan.
+func DecodeOptional(w http.ResponseWriter, r *http.Request, dst any) bool {
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(dst); err != nil {
+		if errors.Is(err, io.EOF) {
+			return true
+		}
 		Error(w, http.StatusBadRequest, "body JSON tidak valid")
 		return false
 	}
