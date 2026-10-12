@@ -1,0 +1,69 @@
+<section class="card">
+  <h2>Level reputasi</h2>
+  <p class="muted small">
+    Level dihitung otomatis dari data nyata pengguna. Level yang lebih tinggi tidak boleh lebih mudah dicapai atau
+    lebih terbatas haknya daripada level di bawahnya; server memeriksa kekonsistenan ini.
+  </p>
+
+  @if (flash(); as msg) {
+    <div class="alert info" role="status">{{ msg }}</div>
+  }
+  @if (error(); as msg) {
+    <div class="alert error" role="alert">{{ msg }}</div>
+  }
+
+  @if (loading()) {
+    <p class="muted">Memuat…</p>
+  } @else {
+    <form class="stack" (submit)="$event.preventDefault(); save()" novalidate>
+      @for (g of levels.controls; track $index) {
+        <fieldset class="level" [formGroup]="g">
+          <legend>Level {{ g.controls.rank.value }}</legend>
+          <div class="grid">
+            <label class="field">
+              <span>Nama</span>
+              <input type="text" formControlName="name" />
+              @if (invalid($index, 'name')) { <p class="err">2 sampai 30 karakter.</p> }
+            </label>
+            <label class="field">
+              <span>Kode</span>
+              <input type="text" formControlName="code" />
+              @if (invalid($index, 'code')) { <p class="err">Huruf kecil/garis bawah, 2–20 karakter.</p> }
+            </label>
+            <label class="field">
+              <span>Bobot kocokan (1–3)</span>
+              <input type="number" step="0.1" formControlName="draw_weight" />
+              @if (invalid($index, 'draw_weight')) { <p class="err">Isi 1 sampai 3.</p> }
+            </label>
+            <label class="field">
+              <span>Nilai grup maksimal (Rp)</span>
+              <input type="number" formControlName="max_group_value" />
+              <p class="hint">Kosong = tanpa batas.</p>
+              @if (invalid($index, 'max_group_value')) { <p class="err">Rp10.000 sampai Rp100.000.000.</p> }
+            </label>
+          </div>
+          @if (g.controls.rank.value > 1) {
+            <div class="grid">
+              <label class="field">
+                <span>Arisan tuntas minimal</span>
+                <input type="number" formControlName="min_completed_cycles" />
+                @if (invalid($index, 'min_completed_cycles')) { <p class="err">0 sampai 1000.</p> }
+              </label>
+              <label class="field">
+                <span>Keterlambatan maksimal</span>
+                <input type="number" formControlName="max_late_count" />
+                <p class="hint">Kosong = tanpa batas.</p>
+                @if (invalid($index, 'max_late_count')) { <p class="err">0 sampai 1000.</p> }
+              </label>
+            </div>
+            <label class="check"><input type="checkbox" formControlName="require_verified" /> Wajib terverifikasi (KYC)</label>
+          } @else {
+            <p class="small muted">Level dasar: tanpa syarat.</p>
+          }
+          <label class="check"><input type="checkbox" formControlName="can_create_group" /> Boleh membuat grup</label>
+        </fieldset>
+      }
+      <button class="btn primary" type="submit" [disabled]="saving()">{{ saving() ? 'Menyimpan…' : 'Simpan level' }}</button>
+    </form>
+  }
+</section>

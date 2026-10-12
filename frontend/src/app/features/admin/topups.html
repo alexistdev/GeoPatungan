@@ -1,0 +1,62 @@
+<div class="row spread">
+  <label class="field filter">
+    <span>Status</span>
+    <select (change)="s.setStatus($any($event.target).value)">
+      @for (f of filters; track f.value) {
+        <option [value]="f.value" [selected]="f.value === s.status()">{{ f.text }}</option>
+      }
+    </select>
+  </label>
+</div>
+
+@if (s.flash(); as msg) {
+  <div class="alert info" role="status">{{ msg }}</div>
+}
+@if (s.error(); as msg) {
+  <div class="alert error" role="alert">{{ msg }}</div>
+}
+
+@if (s.loading()) {
+  <p class="muted">Memuat…</p>
+} @else if (s.items().length === 0) {
+  <p class="card muted">Tidak ada top-up pada status ini.</p>
+} @else {
+  <div class="stack">
+    @for (t of s.items(); track t.id) {
+      <article class="card">
+        <div class="row spread">
+          <strong>{{ t.user_name }} <span class="muted small">{{ t.user_email }}</span></strong>
+          <span class="badge" [class]="label(t.status).tone">{{ label(t.status).text }}</span>
+        </div>
+        <p class="small">
+          Nominal <strong class="money">{{ t.amount | rupiah }}</strong> · harus ditransfer
+          <strong class="money">{{ t.transfer_amount | rupiah }}</strong> (kode unik {{ t.unique_code }})
+        </p>
+        @if (t.sender_name) {
+          <p class="small">Pengirim: {{ t.sender_name }} ({{ t.sender_bank }}){{ t.note ? ' · ' + t.note : '' }}</p>
+        }
+        <p class="small muted">Dibuat {{ t.created_at | date: 'd MMM y, HH:mm' }} · berlaku sampai {{ t.expires_at | date: 'd MMM y, HH:mm' }}</p>
+        @if (t.review_note) {
+          <p class="small muted">Catatan admin: {{ t.review_note }}</p>
+        }
+
+        @if (decidable(t)) {
+          @if (s.is(t.id, 'approve')) {
+            <app-action-form
+              [fields]="approveFields" submitLabel="Setujui top-up" [busy]="s.busy()" [error]="s.actionError()"
+              (submitted)="approve(t, $event)" (cancelled)="s.close()" />
+          } @else if (s.is(t.id, 'reject')) {
+            <app-action-form
+              [fields]="rejectFields" submitLabel="Tolak top-up" [busy]="s.busy()" [error]="s.actionError()"
+              (submitted)="reject(t, $event)" (cancelled)="s.close()" />
+          } @else {
+            <div class="row">
+              <button class="btn primary" type="button" (click)="s.open(t.id, 'approve')">Setujui</button>
+              <button class="btn danger" type="button" (click)="s.open(t.id, 'reject')">Tolak</button>
+            </div>
+          }
+        }
+      </article>
+    }
+  </div>
+}

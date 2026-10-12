@@ -162,3 +162,43 @@ export interface WithdrawalInput {
   account_holder: string;
   note: string;
 }
+
+export interface AdminSettings {
+  platform_fee_bps: number;
+  topup_min_amount: number;
+  topup_max_amount: number;
+  withdraw_min_amount: number;
+  topup_expiry_hours: number;
+}
+
+export interface AdminUserInfo {
+  user_name: string;
+  user_email: string;
+  reviewed_by: string | null;
+}
+
+export type AdminTopup = Topup & AdminUserInfo & { user_id: string };
+export type AdminWithdrawal = Withdrawal & AdminUserInfo & { user_id: string };
+
+export interface KycRequest {
+  id: string;
+  user_id: string;
+  status: 'pending' | 'verified' | 'rejected';
+  note: string;
+  review_note: string;
+  submitted_at: string;
+  reviewed_at: string | null;
+}
+export type AdminKycRequest = KycRequest & { user_name: string; user_email: string; reviewed_by: string | null };
+
+export interface CommissionRule {
+  level: number;
+  share_bps: number;
+}
+
+export interface ReconcileReport {
+  ok: boolean;
+  problems: string[] | null;
+  wallets_checked: number;
+  entries_checked: number;
+}

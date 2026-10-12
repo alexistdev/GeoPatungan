@@ -1,0 +1,65 @@
+<div class="row spread">
+  <label class="field filter">
+    <span>Status</span>
+    <select (change)="s.setStatus($any($event.target).value)">
+      @for (f of filters; track f.value) {
+        <option [value]="f.value" [selected]="f.value === s.status()">{{ f.text }}</option>
+      }
+    </select>
+  </label>
+</div>
+
+@if (s.flash(); as msg) {
+  <div class="alert info" role="status">{{ msg }}</div>
+}
+@if (s.error(); as msg) {
+  <div class="alert error" role="alert">{{ msg }}</div>
+}
+
+@if (s.loading()) {
+  <p class="muted">Memuat…</p>
+} @else if (s.items().length === 0) {
+  <p class="card muted">Tidak ada penarikan pada status ini.</p>
+} @else {
+  <div class="stack">
+    @for (w of s.items(); track w.id) {
+      <article class="card">
+        <div class="row spread">
+          <strong>{{ w.user_name }} <span class="muted small">{{ w.user_email }}</span></strong>
+          <span class="badge" [class]="label(w.status).tone">{{ label(w.status).text }}</span>
+        </div>
+        <p>Transfer <strong class="money">{{ w.amount | rupiah }}</strong> ke:</p>
+        <p class="small">
+          <strong>{{ w.bank_name }}</strong> · <span class="mono">{{ w.account_number }}</span> · a.n. {{ w.account_holder }}
+        </p>
+        @if (w.note) {
+          <p class="small muted">Catatan pengguna: {{ w.note }}</p>
+        }
+        <p class="small muted">Diajukan {{ w.created_at | date: 'd MMM y, HH:mm' }}</p>
+        @if (w.transfer_reference) {
+          <p class="small">Referensi: <span class="mono">{{ w.transfer_reference }}</span></p>
+        }
+        @if (w.review_note) {
+          <p class="small muted">Catatan admin: {{ w.review_note }}</p>
+        }
+
+        @if (w.status === 'pending') {
+          @if (s.is(w.id, 'complete')) {
+            <app-action-form
+              [fields]="completeFields" submitLabel="Tandai selesai" [busy]="s.busy()" [error]="s.actionError()"
+              (submitted)="complete(w, $event)" (cancelled)="s.close()" />
+          } @else if (s.is(w.id, 'reject')) {
+            <app-action-form
+              [fields]="rejectFields" submitLabel="Tolak penarikan" [busy]="s.busy()" [error]="s.actionError()"
+              (submitted)="reject(w, $event)" (cancelled)="s.close()" />
+          } @else {
+            <div class="row">
+              <button class="btn primary" type="button" (click)="s.open(w.id, 'complete')">Sudah ditransfer</button>
+              <button class="btn danger" type="button" (click)="s.open(w.id, 'reject')">Tolak</button>
+            </div>
+          }
+        }
+      </article>
+    }
+  </div>
+}

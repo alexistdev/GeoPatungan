@@ -1,0 +1,63 @@
+<div class="row spread">
+  <label class="field filter">
+    <span>Status</span>
+    <select (change)="s.setStatus($any($event.target).value)">
+      @for (f of filters; track f.value) {
+        <option [value]="f.value" [selected]="f.value === s.status()">{{ f.text }}</option>
+      }
+    </select>
+  </label>
+</div>
+<p class="muted small">
+  Verifikasi dilakukan manual di luar aplikasi. Aplikasi tidak menyimpan nomor KTP; hanya keputusan Anda yang tercatat.
+</p>
+
+@if (s.flash(); as msg) {
+  <div class="alert info" role="status">{{ msg }}</div>
+}
+@if (s.error(); as msg) {
+  <div class="alert error" role="alert">{{ msg }}</div>
+}
+
+@if (s.loading()) {
+  <p class="muted">Memuat…</p>
+} @else if (s.items().length === 0) {
+  <p class="card muted">Tidak ada pengajuan pada status ini.</p>
+} @else {
+  <div class="stack">
+    @for (r of s.items(); track r.id) {
+      <article class="card">
+        <div class="row spread">
+          <strong>{{ r.user_name }} <span class="muted small">{{ r.user_email }}</span></strong>
+          <span class="badge" [class.ok]="r.status === 'verified'" [class.danger]="r.status === 'rejected'" [class.warn]="r.status === 'pending'">
+            {{ statusText(r.status) }}
+          </span>
+        </div>
+        @if (r.note) {
+          <p class="small">Catatan pemohon: {{ r.note }}</p>
+        }
+        <p class="small muted">Diajukan {{ r.submitted_at | date: 'd MMM y, HH:mm' }}</p>
+        @if (r.review_note) {
+          <p class="small muted">Catatan admin: {{ r.review_note }}</p>
+        }
+
+        @if (r.status === 'pending') {
+          @if (s.is(r.id, 'approve')) {
+            <app-action-form
+              [fields]="approveFields" submitLabel="Verifikasi" [busy]="s.busy()" [error]="s.actionError()"
+              (submitted)="approve(r, $event)" (cancelled)="s.close()" />
+          } @else if (s.is(r.id, 'reject')) {
+            <app-action-form
+              [fields]="rejectFields" submitLabel="Tolak pengajuan" [busy]="s.busy()" [error]="s.actionError()"
+              (submitted)="reject(r, $event)" (cancelled)="s.close()" />
+          } @else {
+            <div class="row">
+              <button class="btn primary" type="button" (click)="s.open(r.id, 'approve')">Verifikasi</button>
+              <button class="btn danger" type="button" (click)="s.open(r.id, 'reject')">Tolak</button>
+            </div>
+          }
+        }
+      </article>
+    }
+  </div>
+}

@@ -158,3 +158,21 @@ a { color: var(--primary); }
 
 .money { font-variant-numeric: tabular-nums; font-weight: 700; }
 .big { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; }
+
+.filter { max-width: 260px; margin-bottom: 12px; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+article.card form { margin-top: 12px; }
+article.card .row { margin-top: 8px; }
+
+.spaced { margin-top: 16px; }
+dl.kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0 0 12px; }
+dl.kv dt { color: var(--muted); }
+dl.kv dd { margin: 0; font-weight: 600; }
+
+fieldset.level { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin: 0; }
+fieldset.level legend { font-weight: 700; padding: 0 6px; }
+fieldset.level .grid { margin-bottom: 8px; }
+.check { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+
+a.tile { text-decoration: none; color: inherit; display: block; }
+a.tile:hover { border-color: var(--primary); }

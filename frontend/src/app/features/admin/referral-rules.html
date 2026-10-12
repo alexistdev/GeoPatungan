@@ -1,0 +1,41 @@
+<section class="card">
+  <h2>Komisi referral</h2>
+  <p class="muted small">
+    Bagian dari <strong>biaya platform</strong> per iuran yang dibayarkan ke upline (hanya yang sudah terverifikasi KYC).
+    Total semua level tidak boleh melebihi 100%; sisanya tetap di platform.
+  </p>
+
+  @if (flash(); as msg) {
+    <div class="alert info" role="status">{{ msg }}</div>
+  }
+  @if (error(); as msg) {
+    <div class="alert error" role="alert">{{ msg }}</div>
+  }
+
+  @if (loading()) {
+    <p class="muted">Memuat…</p>
+  } @else {
+    <form class="stack" (submit)="$event.preventDefault(); save()" novalidate>
+      @for (v of values(); track $index) {
+        <label class="field">
+          <span>Level {{ $index + 1 }} (%)</span>
+          <input type="number" step="0.01" min="0" max="100" inputmode="decimal" [value]="v" (input)="set($index, $any($event.target).value)" />
+          @if (bad($index)) {
+            <p class="err">Isi 0 sampai 100.</p>
+          }
+        </label>
+      }
+
+      <p [class.alert]="over()" [class.error]="over()" role="status">
+        Total: <strong>{{ totalBps() / 100 }}%</strong> · platform menyimpan {{ platformKeeps() }}%
+        @if (over()) {
+          — melebihi 100%, tidak dapat disimpan.
+        }
+      </p>
+
+      <button class="btn primary" type="submit" [disabled]="saving() || !valid() || over()">
+        {{ saving() ? 'Menyimpan…' : 'Simpan aturan' }}
+      </button>
+    </form>
+  }
+</section>

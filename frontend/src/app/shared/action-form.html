@@ -1,0 +1,21 @@
+<form class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  @if (error(); as msg) {
+    <div class="alert error" role="alert">{{ msg }}</div>
+  }
+  @for (f of fields(); track f.name) {
+    <label class="field">
+      <span>{{ f.label }}</span>
+      <input [type]="f.type ?? 'text'" [formControlName]="f.name" [attr.name]="f.name" autocomplete="off" [attr.inputmode]="f.type === 'number' ? 'numeric' : null" />
+      @if (f.hint) {
+        <p class="hint">{{ f.hint }}</p>
+      }
+      @if (message(f); as m) {
+        <p class="err">{{ m }}</p>
+      }
+    </label>
+  }
+  <div class="row">
+    <button class="btn primary" type="submit" [disabled]="busy()">{{ busy() ? 'Memproses…' : submitLabel() }}</button>
+    <button class="btn" type="button" (click)="cancelled.emit()" [disabled]="busy()">Batal</button>
+  </div>
+</form>
