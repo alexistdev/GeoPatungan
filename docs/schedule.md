@@ -54,12 +54,12 @@ membuka putaran berikutnya, dan menjadikan grup `done` setelah putaran terakhir.
 
 Orang luar mendapat 404 (keberadaan grup tidak bocor), anggota pending 403.
 
-## Untuk modul payment/wallet berikutnya
+## Pembayaran dan penutupan putaran
 
-Dua fungsi berikut menerima transaksi pemanggil (`pgx.Tx`) supaya bisa digabung
-dengan pencatatan ledger secara atomik, dan sudah diuji terhadap race condition:
+Dipakai oleh modul pembayaran ([payment.md](payment.md)); keduanya menerima transaksi pemanggil
+(`pgx.Tx`) supaya digabung atomik dengan pencatatan ledger, dan sudah diuji terhadap race condition:
 
-- `contribution.MarkPaid(ctx, tx, contributionID, paidAt)` — melunasi iuran,
-  menghitung tepat waktu/terlambat dan denda. Menolak iuran yang sudah lunas
-  atau pada putaran yang tidak `collecting`.
-- `round.Complete(ctx, tx, roundID)` — menutup putaran yang sudah lunas.
+- `contribution.MarkPaid(ctx, tx, contributionID, payerUserID, paidAt, feeBps)` melunasi iuran
+  milik anggota aktif `payerUserID`, menghitung tepat waktu/terlambat, denda, dan biaya
+  platform. Menolak iuran orang lain (404), yang sudah lunas, atau pada putaran yang tidak `collecting`.
+- `round.Complete(ctx, tx, roundID)` menutup putaran yang sudah lunas dan memajukan putaran berikutnya.

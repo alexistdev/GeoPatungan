@@ -129,6 +129,33 @@ func Post(ctx context.Context, tx pgx.Tx, ref Ref, legs ...Leg) (map[string]int6
 	return newBalances, nil
 }
 
+// LockWallets mengunci dompet-dompet (FOR UPDATE) dalam urutan id yang tetap. Operasi yang
+// memanggil Post lebih dari sekali dalam satu transaksi (mis. pembayaran iuran yang sekaligus
+// mencairkan dana) HARUS memanggil ini lebih dulu dengan SEMUA dompet yang akan disentuh.
+// Tanpanya, dua transaksi bisa mengunci dompet dalam urutan berbeda dan saling menunggu (deadlock).
+func LockWallets(ctx context.Context, tx pgx.Tx, ids ...string) error {
+	uniq := make([]string, 0, len(ids))
+	seen := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		l := strings.ToLower(id)
+		if !httpx.IsUUID(id) {
+			return ErrInvalidLegs
+		}
+		if !seen[l] {
+			seen[l] = true
+			uniq = append(uniq, l)
+		}
+	}
+	tag, err := tx.Exec(ctx, `SELECT id FROM wallets WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE`, uniq)
+	if err != nil {
+		return err
+	}
+	if int(tag.RowsAffected()) != len(uniq) {
+		return ErrWalletNotFound
+	}
+	return nil
+}
+
 func isUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"

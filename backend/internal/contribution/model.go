@@ -42,11 +42,33 @@ type Mine struct {
 	GroupName string `json:"group_name"`
 }
 
-// Receipt adalah hasil MarkPaid.
+// Receipt adalah hasil MarkPaid. Semua nominal dalam rupiah utuh.
 type Receipt struct {
-	ID         string    `json:"id"`
-	PaidAt     time.Time `json:"paid_at"`
-	PaidOnTime bool      `json:"paid_on_time"`
-	LateFee    int64     `json:"late_fee"`
-	Total      int64     `json:"total"` // amount + late_fee
+	ID          string    `json:"contribution_id"`
+	GroupID     string    `json:"group_id"`
+	RoundID     string    `json:"round_id"`
+	UserID      string    `json:"-"`
+	Amount      int64     `json:"amount"`       // iuran (masuk ke dana arisan)
+	PlatformFee int64     `json:"platform_fee"` // biaya platform
+	LateFee     int64     `json:"late_fee"`     // denda keterlambatan
+	Total       int64     `json:"total"`        // amount + platform_fee + late_fee
+	PaidAt      time.Time `json:"paid_at"`
+	PaidOnTime  bool      `json:"paid_on_time"`
+}
+
+// Quote adalah rincian yang harus dibayar untuk sebuah iuran pada saat ini.
+type Quote struct {
+	ContributionID string `json:"contribution_id"`
+	GroupID        string `json:"group_id"`
+	RoundID        string `json:"round_id"`
+	DueDate        string `json:"due_date"`
+	Status         string `json:"status"`       // unpaid | paid
+	RoundStatus    string `json:"round_status"` // upcoming | collecting | paid_out
+	Amount         int64  `json:"amount"`
+	PlatformFee    int64  `json:"platform_fee"`
+	LateFee        int64  `json:"late_fee"`
+	Total          int64  `json:"total"`
+	Late           bool   `json:"late"`
+	Payable        bool   `json:"payable"`
+	Reason         string `json:"reason,omitempty"` // mengapa belum bisa dibayar
 }

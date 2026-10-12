@@ -51,11 +51,17 @@ func (f *fixture) contributionID(roundNo int, member group.Member) string {
 	                         WHERE r.group_id = $1 AND r.round_no = $2 AND c.member_id = $3`, f.g.ID, roundNo, member.ID)
 }
 
+// payer mengembalikan user_id pemilik iuran.
+func (f *fixture) payer(contributionID string) string {
+	return f.e.QueryString(`SELECT m.user_id::text FROM contributions c JOIN group_members m ON m.id = c.member_id WHERE c.id = $1`, contributionID)
+}
+
 func (f *fixture) pay(id string, at time.Time) (*Receipt, error) {
+	payer := f.payer(id) // sebelum transaksi: meminjam koneksi kedua saat transaksi terbuka bisa membuntukan pool
 	var rc *Receipt
 	err := f.e.InTx(func(tx pgx.Tx) error {
 		var err error
-		rc, err = MarkPaid(context.Background(), tx, id, at)
+		rc, err = MarkPaid(context.Background(), tx, id, payer, at, 0)
 		return err
 	})
 	return rc, err
@@ -148,7 +154,7 @@ func TestMarkPaidRejections(t *testing.T) {
 		}
 	})
 	t.Run("id tidak ada", func(t *testing.T) {
-		if _, err := f.pay("00000000-0000-0000-0000-000000000000", now); !errors.Is(err, ErrNotFound) {
+		if _, err := f.payWith("00000000-0000-0000-0000-000000000000", f.payer(f.contributionID(1, f.members[0])), now, 0); !errors.Is(err, ErrNotFound) {
 			t.Errorf("err = %v, want ErrNotFound", err)
 		}
 	})
@@ -161,8 +167,9 @@ func TestMarkPaidRollsBackWithCallerTransaction(t *testing.T) {
 	id := f.contributionID(1, f.members[0])
 
 	boom := errors.New("ledger gagal")
+	payer := f.payer(id)
 	err := f.e.InTx(func(tx pgx.Tx) error {
-		if _, err := MarkPaid(context.Background(), tx, id, time.Now()); err != nil {
+		if _, err := MarkPaid(context.Background(), tx, id, payer, time.Now(), 0); err != nil {
 			return err
 		}
 		return boom
@@ -223,7 +230,7 @@ func TestMarkPaidLocksContributionRow(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = txA.Rollback(ctx) }()
-	if _, err := MarkPaid(ctx, txA, id, time.Now()); err != nil {
+	if _, err := MarkPaid(ctx, txA, id, f.payer(id), time.Now(), 0); err != nil { // txA sudah terbuka; satu koneksi tambahan masih aman (tanpa goroutine lain)
 		t.Fatal(err)
 	}
 
@@ -403,4 +410,136 @@ func TestListByUser(t *testing.T) {
 	if got, _ := repo.ListByUser(ctx, removedUser, ""); len(got) != 0 {
 		t.Errorf("anggota removed melihat %d iuran, want 0", len(got))
 	}
+}
+
+// ---- biaya platform, pembayar, dan kuotasi ----------------------------------------
+
+func (f *fixture) payWith(id, payer string, at time.Time, bps int) (*Receipt, error) {
+	var rc *Receipt
+	err := f.e.InTx(func(tx pgx.Tx) error {
+		var err error
+		rc, err = MarkPaid(context.Background(), tx, id, payer, at, bps)
+		return err
+	})
+	return rc, err
+}
+
+func TestMarkPaidChargesPlatformFeeAndLateFee(t *testing.T) {
+	f := newFixture(t, testutil.GroupSpec{Slots: 3, Amount: 200_000, LateFee: 10_000})
+	f.setDue(1, "2026-12-01")
+
+	// tepat waktu: iuran + biaya 2,5% (5.000)
+	id := f.contributionID(1, f.members[0])
+	rc, err := f.payWith(id, f.payer(id), time.Date(2026, 12, 1, 9, 0, 0, 0, wib), 250)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rc.Amount != 200_000 || rc.PlatformFee != 5_000 || rc.LateFee != 0 || rc.Total != 205_000 || !rc.PaidOnTime {
+		t.Errorf("tepat waktu: %+v", rc)
+	}
+	var stored int64
+	if err := f.e.Pool.QueryRow(context.Background(), `SELECT platform_fee FROM contributions WHERE id = $1`, id).Scan(&stored); err != nil || stored != 5_000 {
+		t.Errorf("platform_fee tersimpan = %d (%v), want 5000", stored, err)
+	}
+
+	// terlambat: iuran + biaya + denda
+	id2 := f.contributionID(1, f.members[1])
+	rc2, err := f.payWith(id2, f.payer(id2), time.Date(2026, 12, 5, 9, 0, 0, 0, wib), 250)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rc2.PlatformFee != 5_000 || rc2.LateFee != 10_000 || rc2.Total != 215_000 || rc2.PaidOnTime {
+		t.Errorf("terlambat: %+v", rc2)
+	}
+}
+
+func TestMarkPaidOnlyByOwnerOfTheContribution(t *testing.T) {
+	f := newFixture(t, testutil.GroupSpec{Slots: 3})
+	id := f.contributionID(1, f.members[0])
+	other := f.payer(f.contributionID(1, f.members[1]))
+	stranger := f.e.NewUser("stranger")
+	now := time.Now()
+
+	for name, payer := range map[string]string{"anggota lain di grup yang sama": other, "orang luar": stranger} {
+		if _, err := f.payWith(id, payer, now, 0); !errors.Is(err, ErrNotFound) {
+			t.Errorf("%s: err = %v, want ErrNotFound (keberadaan iuran tidak boleh bocor)", name, err)
+		}
+	}
+	if st := f.e.QueryString(`SELECT status FROM contributions WHERE id = $1`, id); st != "unpaid" {
+		t.Errorf("status = %s; pembayar yang salah tidak boleh melunasi", st)
+	}
+
+	// anggota yang sudah tidak aktif tidak bisa membayar
+	f.e.Exec(`UPDATE group_members SET status = 'removed' WHERE id = $1`, f.members[0].ID)
+	if _, err := f.payWith(id, f.payer(id), now, 0); !errors.Is(err, ErrNotFound) {
+		t.Errorf("anggota removed: err = %v, want ErrNotFound", err)
+	}
+}
+
+func TestQuoteFor(t *testing.T) {
+	f := newFixture(t, testutil.GroupSpec{Slots: 3, Amount: 200_000, LateFee: 10_000})
+	ctx := context.Background()
+	f.setDue(1, "2026-12-01")
+	id := f.contributionID(1, f.members[0])
+	owner := f.payer(id)
+	quote := func(userID string, at time.Time, bps int) (*Quote, error) {
+		return QuoteFor(ctx, f.e.Pool, id, userID, at, bps)
+	}
+
+	t.Run("tepat waktu", func(t *testing.T) {
+		q, err := quote(owner, time.Date(2026, 12, 1, 22, 0, 0, 0, wib), 250)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if q.Amount != 200_000 || q.PlatformFee != 5_000 || q.LateFee != 0 || q.Total != 205_000 || q.Late || !q.Payable || q.Reason != "" {
+			t.Errorf("quote = %+v", q)
+		}
+	})
+	t.Run("terlambat", func(t *testing.T) {
+		q, _ := quote(owner, time.Date(2026, 12, 2, 0, 0, 0, 0, wib), 250)
+		if q.LateFee != 10_000 || q.Total != 215_000 || !q.Late || !q.Payable {
+			t.Errorf("quote = %+v", q)
+		}
+	})
+	t.Run("kuotasi tidak mengubah apa pun", func(t *testing.T) {
+		if st := f.e.QueryString(`SELECT status FROM contributions WHERE id = $1`, id); st != "unpaid" {
+			t.Errorf("status = %s", st)
+		}
+	})
+	t.Run("bukan pemilik", func(t *testing.T) {
+		if _, err := quote(f.e.NewUser("x"), time.Now(), 0); !errors.Is(err, ErrNotFound) {
+			t.Errorf("err = %v, want ErrNotFound", err)
+		}
+		if _, err := QuoteFor(ctx, f.e.Pool, "00000000-0000-0000-0000-000000000000", owner, time.Now(), 0); !errors.Is(err, ErrNotFound) {
+			t.Errorf("id tidak ada: err = %v", err)
+		}
+	})
+	t.Run("putaran belum dibuka", func(t *testing.T) {
+		up := f.contributionID(2, f.members[0])
+		q, err := QuoteFor(ctx, f.e.Pool, up, owner, time.Now(), 0)
+		if err != nil || q.Payable || q.Reason != "putaran belum dibuka" || q.RoundStatus != "upcoming" {
+			t.Errorf("quote = %+v, %v", q, err)
+		}
+	})
+	t.Run("putaran sudah ditutup", func(t *testing.T) {
+		f.e.Exec(`UPDATE rounds SET status = 'paid_out' WHERE group_id = $1 AND round_no = 3`, f.g.ID)
+		pd := f.contributionID(3, f.members[0])
+		q, _ := QuoteFor(ctx, f.e.Pool, pd, owner, time.Now(), 0)
+		if q.Payable || q.Reason != "putaran sudah ditutup" {
+			t.Errorf("quote = %+v", q)
+		}
+	})
+	t.Run("sudah dibayar menampilkan nominal yang tercatat", func(t *testing.T) {
+		if _, err := f.payWith(id, owner, time.Date(2026, 12, 3, 9, 0, 0, 0, wib), 250); err != nil {
+			t.Fatal(err)
+		}
+		// bps berbeda saat melihat tidak boleh mengubah angka yang sudah tercatat
+		q, err := quote(owner, time.Now(), 999)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if q.Payable || q.Reason != "sudah dibayar" || q.PlatformFee != 5_000 || q.LateFee != 10_000 || q.Total != 215_000 || !q.Late {
+			t.Errorf("quote = %+v", q)
+		}
+	})
 }

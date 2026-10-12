@@ -62,3 +62,31 @@ func TestWIBOffset(t *testing.T) {
 		t.Errorf("offset WIB = %d detik, want 25200", off)
 	}
 }
+
+func TestPlatformFee(t *testing.T) {
+	tests := []struct {
+		amount int64
+		bps    int
+		want   int64
+	}{
+		{200_000, 0, 0},
+		{200_000, 250, 5_000},   // 2,5%
+		{200_000, 100, 2_000},   // 1%
+		{200_000, 1000, 20_000}, // 10% (batas atas pengaturan)
+		{10_001, 250, 250},      // 250,025 -> 250
+		{10_020, 250, 251},      // 250,5 -> 251 (setengah ke atas)
+		{10_019, 250, 250},      // 250,475 -> 250
+		{1, 250, 0},             // terlalu kecil -> 0
+		{40, 125, 1},            // 0,5 -> 1
+		{39, 125, 0},            // 0,4875 -> 0
+		{100_000_000, 1000, 10_000_000},
+		{0, 250, 0},
+		{-100, 250, 0},    // nominal negatif tidak menghasilkan biaya negatif
+		{200_000, -50, 0}, // bps negatif dianggap 0
+	}
+	for _, tc := range tests {
+		if got := PlatformFee(tc.amount, tc.bps); got != tc.want {
+			t.Errorf("PlatformFee(%d, %d) = %d, want %d", tc.amount, tc.bps, got, tc.want)
+		}
+	}
+}

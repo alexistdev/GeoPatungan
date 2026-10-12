@@ -22,6 +22,7 @@ import (
 	"github.com/alexistdev/geopatungan/internal/draw"
 	"github.com/alexistdev/geopatungan/internal/group"
 	"github.com/alexistdev/geopatungan/internal/middleware"
+	"github.com/alexistdev/geopatungan/internal/payment"
 	"github.com/alexistdev/geopatungan/internal/round"
 	"github.com/alexistdev/geopatungan/internal/settings"
 	"github.com/alexistdev/geopatungan/internal/topup"
@@ -52,6 +53,7 @@ func main() {
 	settingsHandler := settings.NewHandler(settings.NewService(settingsRepo))
 	topupHandler := topup.NewHandler(topup.NewService(topup.NewRepository(db), settingsRepo))
 	walletHandler := wallet.NewHandler(wallet.NewService(wallet.NewRepository(db)))
+	paymentHandler := payment.NewHandler(payment.NewRepository(db))
 	contributionHandler := contribution.NewHandler(contribution.NewService(contribution.NewRepository(db), groupRepo))
 
 	r := chi.NewRouter()
@@ -77,6 +79,7 @@ func main() {
 			r.Get("/me", userHandler.Me)
 			r.Get("/me/contributions", contributionHandler.Mine)
 			r.Get("/payment-info", settingsHandler.PaymentInfo)
+			r.Route("/contributions", paymentHandler.Routes)
 			r.Route("/wallet", func(r chi.Router) {
 				walletHandler.Routes(r)
 				topupHandler.Routes(r)
