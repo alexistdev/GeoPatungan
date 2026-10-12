@@ -14,6 +14,7 @@ package wallet
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -23,6 +24,19 @@ var (
 	ErrAlreadyPosted     = errors.New("peristiwa ini sudah pernah dicatat")
 	ErrWalletNotFound    = errors.New("dompet tidak ditemukan")
 )
+
+// InsufficientFundsError menyertakan berapa yang dibutuhkan dan berapa saldo saat ini, supaya
+// klien bisa menampilkan kekurangannya. errors.Is(err, ErrInsufficientFunds) bernilai true.
+type InsufficientFundsError struct {
+	Required int64 `json:"required"`
+	Balance  int64 `json:"balance"`
+}
+
+func (e *InsufficientFundsError) Error() string {
+	return fmt.Sprintf("saldo tidak cukup: dibutuhkan %d, saldo %d", e.Required, e.Balance)
+}
+
+func (e *InsufficientFundsError) Unwrap() error { return ErrInsufficientFunds }
 
 // Jenis dompet sistem (selain dompet pengguna).
 const (

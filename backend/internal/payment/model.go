@@ -10,24 +10,12 @@
 package payment
 
 import (
-	"fmt"
-
 	"github.com/alexistdev/geopatungan/internal/contribution"
 	"github.com/alexistdev/geopatungan/internal/wallet"
 )
 
-// InsufficientFundsError menyertakan berapa yang dibutuhkan dan berapa saldo saat ini.
-// errors.Is(err, wallet.ErrInsufficientFunds) bernilai true.
-type InsufficientFundsError struct {
-	Required int64 `json:"required"`
-	Balance  int64 `json:"balance"`
-}
-
-func (e *InsufficientFundsError) Error() string {
-	return fmt.Sprintf("saldo tidak cukup: dibutuhkan %d, saldo %d", e.Required, e.Balance)
-}
-
-func (e *InsufficientFundsError) Unwrap() error { return wallet.ErrInsufficientFunds }
+// InsufficientFundsError adalah alias dari wallet.InsufficientFundsError (dipakai bersama modul lain).
+type InsufficientFundsError = wallet.InsufficientFundsError
 
 // Payout adalah pencairan dana putaran ke penerima giliran.
 type Payout struct {

@@ -58,19 +58,6 @@ func NewService(store Store, settings Settings) *Service {
 	return &Service{store: store, settings: settings, rand: rand.Reader}
 }
 
-// rupiah memformat nominal dengan titik ribuan: 1500000 -> "1.500.000".
-func rupiah(n int64) string {
-	s := fmt.Sprintf("%d", n)
-	var out []byte
-	for i, c := range []byte(s) {
-		if i > 0 && (len(s)-i)%3 == 0 {
-			out = append(out, '.')
-		}
-		out = append(out, c)
-	}
-	return string(out)
-}
-
 // randomCodes mengembalikan n kode unik berbeda dalam rentang 1..999, berurutan acak.
 func randomCodes(r io.Reader, n int) ([]int, error) {
 	if n < 1 || n > 999 {
@@ -100,7 +87,7 @@ func (s *Service) Create(ctx context.Context, userID string, amount int64) (*Det
 	}
 	if amount < cfg.TopupMinAmount || amount > cfg.TopupMaxAmount {
 		return nil, httpx.ValidationError(fmt.Sprintf("nominal top-up harus antara Rp%s dan Rp%s",
-			rupiah(cfg.TopupMinAmount), rupiah(cfg.TopupMaxAmount)))
+			httpx.Rupiah(cfg.TopupMinAmount), httpx.Rupiah(cfg.TopupMaxAmount)))
 	}
 	banks, err := s.settings.ListBanks(ctx, true)
 	if err != nil {

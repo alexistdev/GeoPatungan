@@ -9,6 +9,7 @@ package httpx
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -56,4 +57,17 @@ func DecodeOptional(w http.ResponseWriter, r *http.Request, dst any) bool {
 		return false
 	}
 	return true
+}
+
+// Rupiah memformat nominal dengan titik ribuan untuk pesan ke pengguna: 1500000 -> "1.500.000".
+func Rupiah(n int64) string {
+	s := fmt.Sprintf("%d", n)
+	var out []byte
+	for i, c := range []byte(s) {
+		if i > 0 && (len(s)-i)%3 == 0 && s[0] != '-' || (i > 1 && (len(s)-i)%3 == 0 && s[0] == '-') {
+			out = append(out, '.')
+		}
+		out = append(out, c)
+	}
+	return string(out)
 }
