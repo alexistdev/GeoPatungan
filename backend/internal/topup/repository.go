@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/alexistdev/geopatungan/internal/audit"
+	"github.com/alexistdev/geopatungan/internal/notification"
 	"github.com/alexistdev/geopatungan/internal/wallet"
 )
 
@@ -284,6 +285,13 @@ func (r *Repository) Approve(ctx context.Context, adminID, id string, received *
 		map[string]any{"user_id": userID, "transfer_amount": transfer, "received_amount": credited}); err != nil {
 		return nil, err
 	}
+	if err := notification.Send(ctx, tx, notification.Notice{
+		UserID: userID, Type: notification.TypeTopupApproved, Title: "Top-up disetujui",
+		Body: "Top-up Anda sebesar " + notification.Rupiah(credited) + " sudah masuk ke saldo.",
+		Data: map[string]any{"topup_id": id, "amount": credited},
+	}); err != nil {
+		return nil, err
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
@@ -311,6 +319,13 @@ func (r *Repository) Reject(ctx context.Context, adminID, id, note string) (*Top
 	}
 	if err := audit.Record(ctx, tx, adminID, "topup.reject", "topup", id,
 		map[string]any{"user_id": userID, "transfer_amount": transfer}); err != nil {
+		return nil, err
+	}
+	if err := notification.Send(ctx, tx, notification.Notice{
+		UserID: userID, Type: notification.TypeTopupRejected, Title: "Top-up ditolak",
+		Body: notification.WithNote("Top-up Anda sebesar "+notification.Rupiah(transfer)+" ditolak.", note),
+		Data: map[string]any{"topup_id": id, "amount": transfer},
+	}); err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {

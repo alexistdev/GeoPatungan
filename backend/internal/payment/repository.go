@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/alexistdev/geopatungan/internal/contribution"
+	"github.com/alexistdev/geopatungan/internal/notification"
 	"github.com/alexistdev/geopatungan/internal/referral"
 	"github.com/alexistdev/geopatungan/internal/round"
 	"github.com/alexistdev/geopatungan/internal/settings"
@@ -205,6 +206,16 @@ func (r *Repository) pay(ctx context.Context, userID, contributionID string) (*R
 		if err := referral.Record(ctx, tx, contributionID, userID, commissions); err != nil {
 			return nil, err
 		}
+		for _, c := range commissions { // tanpa nama downline: hanya level dan jumlah
+			if err := notification.Send(ctx, tx, notification.Notice{
+				UserID: c.UserID, Type: notification.TypeReferralCommission,
+				Title: "Komisi referral diterima",
+				Body:  fmt.Sprintf("Anda menerima komisi %s dari downline level %d.", notification.Rupiah(c.Amount), c.Level),
+				Data:  map[string]any{"contribution_id": contributionID, "level": c.Level, "amount": c.Amount},
+			}); err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	// 5. Iuran terakhir? Tutup putaran dan cairkan.
@@ -233,6 +244,14 @@ func (r *Repository) pay(ctx context.Context, userID, contributionID string) (*R
 		}
 		if recipientWallet == payerWallet { // pembayar terakhir sekaligus penerima: saldo akhir sudah termasuk pencairan
 			res.Balance = payout[payerWallet]
+		}
+		if err := notification.Send(ctx, tx, notification.Notice{
+			UserID: recipientUserID, Type: notification.TypePayoutReceived,
+			Title: "Pencairan arisan diterima",
+			Body:  truncate(fmt.Sprintf("Putaran %d grup %s selesai. %s masuk ke saldo Anda.", roundNo, groupName, notification.Rupiah(pot)), notification.MaxBody),
+			Data:  map[string]any{"round_id": roundID, "amount": pot},
+		}); err != nil {
+			return nil, err
 		}
 		res.Round = RoundOutcome{Completed: true, GroupDone: groupDone, Payout: &Payout{RecipientName: recipientName, Amount: pot}}
 	}

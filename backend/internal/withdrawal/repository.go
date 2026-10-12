@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/alexistdev/geopatungan/internal/audit"
+	"github.com/alexistdev/geopatungan/internal/notification"
 	"github.com/alexistdev/geopatungan/internal/wallet"
 )
 
@@ -241,6 +242,13 @@ func (r *Repository) Complete(ctx context.Context, adminID, id, reference, note 
 		map[string]any{"user_id": userID, "amount": amount, "transfer_reference": reference}); err != nil {
 		return nil, err
 	}
+	if err := notification.Send(ctx, tx, notification.Notice{
+		UserID: userID, Type: notification.TypeWithdrawalDone, Title: "Penarikan selesai",
+		Body: notification.WithNote("Penarikan "+notification.Rupiah(amount)+" sudah ditransfer ke rekening Anda. Referensi: "+reference, ""),
+		Data: map[string]any{"withdrawal_id": id, "amount": amount},
+	}); err != nil {
+		return nil, err
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
@@ -270,6 +278,13 @@ func (r *Repository) Reject(ctx context.Context, adminID, id, note string) (*Wit
 	}
 	if err := audit.Record(ctx, tx, adminID, "withdrawal.reject", "withdrawal", id,
 		map[string]any{"user_id": userID, "amount": amount}); err != nil {
+		return nil, err
+	}
+	if err := notification.Send(ctx, tx, notification.Notice{
+		UserID: userID, Type: notification.TypeWithdrawalRejected, Title: "Penarikan ditolak",
+		Body: notification.WithNote("Penarikan "+notification.Rupiah(amount)+" ditolak dan dana dikembalikan ke saldo Anda.", note),
+		Data: map[string]any{"withdrawal_id": id, "amount": amount},
+	}); err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {

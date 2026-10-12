@@ -23,6 +23,7 @@ import (
 	"github.com/alexistdev/geopatungan/internal/group"
 	"github.com/alexistdev/geopatungan/internal/kyc"
 	"github.com/alexistdev/geopatungan/internal/middleware"
+	"github.com/alexistdev/geopatungan/internal/notification"
 	"github.com/alexistdev/geopatungan/internal/payment"
 	"github.com/alexistdev/geopatungan/internal/referral"
 	"github.com/alexistdev/geopatungan/internal/reputation"
@@ -60,6 +61,7 @@ func main() {
 	walletHandler := wallet.NewHandler(wallet.NewService(wallet.NewRepository(db)))
 	withdrawalHandler := withdrawal.NewHandler(withdrawal.NewService(withdrawal.NewRepository(db), settingsRepo))
 	referralHandler := referral.NewHandler(referral.NewService(referral.NewRepository(db)))
+	notificationHandler := notification.NewHandler(notification.NewService(notification.NewRepository(db)))
 	reputationHandler := reputation.NewHandler(reputationSvc)
 	kycHandler := kyc.NewHandler(kyc.NewService(kyc.NewRepository(db)))
 	paymentHandler := payment.NewHandler(payment.NewRepository(db))
@@ -91,6 +93,7 @@ func main() {
 			r.Get("/me/reputation", reputationHandler.Me)
 			r.Route("/me/kyc", kycHandler.Routes)
 			r.Route("/me/referral", referralHandler.Routes)
+			r.Route("/me/notifications", notificationHandler.Routes)
 			r.Route("/contributions", paymentHandler.Routes)
 			r.Route("/wallet", func(r chi.Router) {
 				walletHandler.Routes(r)

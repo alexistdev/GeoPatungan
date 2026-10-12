@@ -13,6 +13,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/alexistdev/geopatungan/internal/notification"
 )
 
 const groupColumns = `g.id, g.owner_id, g.name, g.contribution_amount, g.period_type, g.slot_count,
@@ -176,10 +178,10 @@ func (r *Repository) ApproveMember(ctx context.Context, groupID, memberID string
 	defer func() { _ = tx.Rollback(ctx) }()
 
 	var slots int
-	var status string
+	var status, groupName string
 	err = tx.QueryRow(ctx,
-		`SELECT slot_count, status FROM groups WHERE id = $1 FOR UPDATE`, groupID,
-	).Scan(&slots, &status)
+		`SELECT slot_count, status, name FROM groups WHERE id = $1 FOR UPDATE`, groupID,
+	).Scan(&slots, &status, &groupName)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ErrNotFound
 	}
@@ -200,30 +202,54 @@ func (r *Repository) ApproveMember(ctx context.Context, groupID, memberID string
 		return ErrGroupFull
 	}
 
-	tag, err := tx.Exec(ctx,
+	var userID string
+	err = tx.QueryRow(ctx,
 		`UPDATE group_members SET status = 'active'
-		  WHERE id = $1 AND group_id = $2 AND status = 'pending'`, memberID, groupID)
+		  WHERE id = $1 AND group_id = $2 AND status = 'pending' RETURNING user_id::text`, memberID, groupID).Scan(&userID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrNotFound
+	}
 	if err != nil {
 		return err
 	}
-	if tag.RowsAffected() == 0 {
-		return ErrNotFound
+	if err := notification.Send(ctx, tx, notification.Notice{
+		UserID: userID, Type: notification.TypeMemberApproved, Title: "Permintaan bergabung disetujui",
+		Body: notification.WithNote("Anda diterima di grup "+groupName+".", ""),
+		Data: map[string]any{"group_id": groupID},
+	}); err != nil {
+		return err
 	}
 	return tx.Commit(ctx)
 }
 
 // RejectMember menolak permintaan bergabung yang masih pending.
 func (r *Repository) RejectMember(ctx context.Context, groupID, memberID string) error {
-	tag, err := r.db.Exec(ctx,
-		`UPDATE group_members SET status = 'removed'
-		  WHERE id = $1 AND group_id = $2 AND status = 'pending'`, memberID, groupID)
+	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
-	if tag.RowsAffected() == 0 {
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var userID, groupName string
+	err = tx.QueryRow(ctx,
+		`UPDATE group_members m SET status = 'removed'
+		   FROM groups g
+		  WHERE m.id = $1 AND m.group_id = $2 AND m.status = 'pending' AND g.id = m.group_id
+		 RETURNING m.user_id::text, g.name`, memberID, groupID).Scan(&userID, &groupName)
+	if errors.Is(err, pgx.ErrNoRows) {
 		return ErrNotFound
 	}
-	return nil
+	if err != nil {
+		return err
+	}
+	if err := notification.Send(ctx, tx, notification.Notice{
+		UserID: userID, Type: notification.TypeMemberRejected, Title: "Permintaan bergabung ditolak",
+		Body: notification.WithNote("Permintaan Anda untuk bergabung di grup "+groupName+" ditolak.", ""),
+		Data: map[string]any{"group_id": groupID},
+	}); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 func isUniqueViolation(err error) bool {

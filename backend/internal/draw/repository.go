@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/alexistdev/geopatungan/internal/group"
+	"github.com/alexistdev/geopatungan/internal/notification"
 	"github.com/alexistdev/geopatungan/internal/round"
 )
 
@@ -179,6 +180,9 @@ func (r *Repository) Execute(ctx context.Context, groupID string, ordered []Entr
 	if _, err := tx.Exec(ctx, `UPDATE groups SET status = 'running' WHERE id = $1`, groupID); err != nil {
 		return err
 	}
+	if err := notifyStarted(ctx, tx, groupID); err != nil {
+		return err
+	}
 	return tx.Commit(ctx)
 }
 
@@ -224,6 +228,9 @@ func (r *Repository) Manual(ctx context.Context, d *Draw) error {
 		return err
 	}
 	if _, err := tx.Exec(ctx, `UPDATE groups SET status = 'running' WHERE id = $1`, d.GroupID); err != nil {
+		return err
+	}
+	if err := notifyStarted(ctx, tx, d.GroupID); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)
@@ -278,4 +285,17 @@ func (r *Repository) Get(ctx context.Context, groupID string) (*Draw, error) {
 func isUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+}
+
+// notifyStarted memberi tahu semua anggota aktif bahwa grup dimulai dan urutan giliran sudah ditetapkan.
+func notifyStarted(ctx context.Context, tx pgx.Tx, groupID string) error {
+	var name string
+	if err := tx.QueryRow(ctx, `SELECT name FROM groups WHERE id = $1`, groupID).Scan(&name); err != nil {
+		return err
+	}
+	return notification.SendToGroupMembers(ctx, tx, groupID, notification.Notice{
+		Type: notification.TypeGroupStarted, Title: "Arisan dimulai",
+		Body: notification.WithNote("Grup "+name+" dimulai. Cek urutan giliran dan jadwal iuran Anda.", ""),
+		Data: map[string]any{"group_id": groupID},
+	})
 }

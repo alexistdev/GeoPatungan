@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/alexistdev/geopatungan/internal/audit"
+	"github.com/alexistdev/geopatungan/internal/notification"
 )
 
 const columns = `r.id, r.user_id, r.status, r.note, r.review_note, r.submitted_at, r.reviewed_at`
@@ -155,6 +156,15 @@ func (r *Repository) Review(ctx context.Context, adminID, id, decision, note str
 	}
 	if err := audit.Record(ctx, tx, adminID, "kyc."+decision, "kyc_request", id,
 		map[string]any{"user_id": userID}); err != nil {
+		return nil, err
+	}
+	n := notification.Notice{UserID: userID, Type: notification.TypeKYCVerified, Title: "Verifikasi identitas disetujui",
+		Body: "Akun Anda sudah terverifikasi.", Data: map[string]any{"kyc_request_id": id}}
+	if decision != StatusVerified {
+		n.Type, n.Title = notification.TypeKYCRejected, "Verifikasi identitas ditolak"
+		n.Body = notification.WithNote("Pengajuan verifikasi Anda ditolak.", note)
+	}
+	if err := notification.Send(ctx, tx, n); err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {
