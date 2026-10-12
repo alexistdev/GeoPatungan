@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/alexistdev/geopatungan/internal/contribution"
+	"github.com/alexistdev/geopatungan/internal/referral"
 	"github.com/alexistdev/geopatungan/internal/round"
 	"github.com/alexistdev/geopatungan/internal/settings"
 	"github.com/alexistdev/geopatungan/internal/wallet"
@@ -132,7 +133,24 @@ func (r *Repository) pay(ctx context.Context, userID, contributionID string) (*R
 	if err != nil {
 		return nil, err
 	}
-	if err := wallet.LockWallets(ctx, tx, payerWallet, recipientWallet, escrow, platform); err != nil {
+	// Upline yang berhak atas komisi (maksimal 4). Dompet mereka dikunci bersama yang lain di awal:
+	// komisi dibayar di Post tersendiri, dan tanpa kunci awal dua transaksi bisa mengunci dompet dalam
+	// urutan berlawanan (mis. upline yang sedang menjadi pembayar di grup lain) lalu saling menunggu.
+	plan, err := referral.Plan(ctx, tx, userID)
+	if err != nil {
+		return nil, err
+	}
+	uplineWallet := make(map[string]string, len(plan))
+	lockSet := []string{payerWallet, recipientWallet, escrow, platform}
+	for _, b := range plan {
+		w, err := wallet.EnsureUserWallet(ctx, tx, b.UserID)
+		if err != nil {
+			return nil, err
+		}
+		uplineWallet[b.UserID] = w
+		lockSet = append(lockSet, w)
+	}
+	if err := wallet.LockWallets(ctx, tx, lockSet...); err != nil {
 		return nil, err
 	}
 
@@ -168,6 +186,26 @@ func (r *Repository) pay(ctx context.Context, userID, contributionID string) (*R
 		return nil, err
 	}
 	res := &Result{Receipt: receipt, Balance: balances[payerWallet]}
+
+	// Komisi referral: HANYA dari biaya platform atas iuran ini (bukan denda, bukan dana arisan),
+	// dipindahkan dari dompet platform ke saldo upline. Sisa pembulatan dan bagian upline yang tidak
+	// berhak tetap di platform.
+	if commissions := referral.Amounts(plan, receipt.PlatformFee); len(commissions) > 0 {
+		legs := []wallet.Leg{{WalletID: platform, Amount: -referral.Total(commissions)}}
+		for _, c := range commissions {
+			legs = append(legs, wallet.Leg{WalletID: uplineWallet[c.UserID], Amount: c.Amount})
+		}
+		if _, err := wallet.Post(ctx, tx, wallet.Ref{
+			Type:        "referral_commission",
+			ID:          contributionID,
+			Description: "Komisi referral dari biaya platform",
+		}, legs...); err != nil {
+			return nil, err
+		}
+		if err := referral.Record(ctx, tx, contributionID, userID, commissions); err != nil {
+			return nil, err
+		}
+	}
 
 	// 5. Iuran terakhir? Tutup putaran dan cairkan.
 	var unpaid int
