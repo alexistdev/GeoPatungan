@@ -9,6 +9,7 @@ package payment
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -411,5 +412,86 @@ func TestUplineWalletIsLockedBeforeAnyWrite(t *testing.T) {
 	}
 	if n := r.commissionRows(); n != 4 {
 		t.Errorf("baris komisi = %d, want 4", n)
+	}
+}
+
+// ---- pemberitahuan -----------------------------------------------------------
+
+func (r *referralFx) notes(user, typ string) (n int, body string) {
+	n = r.e.QueryInt(`SELECT count(*) FROM notifications WHERE user_id = $1 AND type = $2`, user, typ)
+	if n > 0 {
+		_ = r.e.Pool.QueryRow(r.ctx, `SELECT body FROM notifications WHERE user_id = $1 AND type = $2 ORDER BY id DESC LIMIT 1`, user, typ).Scan(&body)
+	}
+	return
+}
+
+func TestCommissionNotifiesEachUplineWithoutRevealingDownline(t *testing.T) {
+	r := newReferralFx(t, 200)
+	r.e.Verify(r.ch[:4]...)
+	r.mustPay(1, 0)
+
+	for level, amount := range map[int]string{1: "Rp800", 2: "Rp500", 3: "Rp300", 4: "Rp200"} {
+		upline := r.ch[4-level]
+		n, body := r.notes(upline, "referral.commission")
+		if n != 1 || !strings.Contains(body, amount) || !strings.Contains(body, "level "+string(rune('0'+level))) {
+			t.Errorf("level %d: n=%d body=%q", level, n, body)
+		}
+		if strings.Contains(strings.ToLower(body), "e-") || strings.Contains(body, r.ch[4]) {
+			t.Errorf("pemberitahuan membocorkan identitas downline: %q", body)
+		}
+	}
+	if n, _ := r.notes(r.ch[4], "referral.commission"); n != 0 {
+		t.Error("pembayar tidak boleh menerima pemberitahuan komisi")
+	}
+}
+
+func TestNoCommissionNotificationWhenUplineNotEligible(t *testing.T) {
+	r := newReferralFx(t, 200) // tidak ada yang terverifikasi
+	r.mustPay(1, 0)
+	for _, u := range r.ch {
+		if n, _ := r.notes(u, "referral.commission"); n != 0 {
+			t.Errorf("%s menerima pemberitahuan komisi padahal tidak berhak", u)
+		}
+	}
+}
+
+func TestPayoutNotifiesRecipientOnlyWhenRoundCompletes(t *testing.T) {
+	r := newReferralFx(t, 0)
+	recipient := r.ch[4] // penerima putaran 1 (anggota pertama)
+	r.mustPay(1, 0)      // penerima membayar dulu: putaran belum lengkap
+	if n, _ := r.notes(recipient, "round.payout_received"); n != 0 {
+		t.Fatal("pemberitahuan pencairan terkirim sebelum putaran lengkap")
+	}
+	r.mustPay(1, 1) // F pembayar terakhir (BUKAN penerima) menutup putaran
+	n, body := r.notes(recipient, "round.payout_received")
+	if n != 1 || !strings.Contains(body, "Rp200.000") || !strings.Contains(body, "Putaran 1") {
+		t.Errorf("n=%d body=%q", n, body)
+	}
+	if n, _ := r.notes(r.members[1].UserID, "round.payout_received"); n != 0 {
+		t.Error("pembayar terakhir bukan penerima, tidak boleh diberi tahu")
+	}
+}
+
+// Pembayaran yang dibatalkan tidak meninggalkan pemberitahuan.
+func TestFailedPaymentLeavesNoNotification(t *testing.T) {
+	r := newReferralFx(t, 200)
+	r.e.Verify(r.ch[:4]...)
+	cid := r.cid(1, 0)
+	// saldo pembayar dikosongkan lewat penarikan ledger ke external agar pembayaran gagal
+	ext, _ := wallet.SystemWallet(r.ctx, r.e.Pool, wallet.TypeExternal)
+	w, _ := wallet.EnsureUserWallet(r.ctx, r.e.Pool, r.ch[4])
+	bal := r.e.Balance(r.ch[4])
+	if err := r.e.InTx(func(tx pgx.Tx) error {
+		_, err := wallet.Post(r.ctx, tx, wallet.Ref{Type: "zz_drain", ID: cid},
+			wallet.Leg{WalletID: w, Amount: -bal}, wallet.Leg{WalletID: ext, Amount: bal})
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.repo.Pay(r.ctx, r.ch[4], cid); err == nil {
+		t.Fatal("pembayaran harus gagal (saldo kosong)")
+	}
+	if n := r.e.QueryInt(`SELECT count(*) FROM notifications WHERE user_id = ANY($1::uuid[])`, r.ch); n != 0 {
+		t.Errorf("%d pemberitahuan tertinggal dari pembayaran gagal", n)
 	}
 }
