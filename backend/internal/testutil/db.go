@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -43,13 +44,20 @@ func NewEnv(t *testing.T) *Env {
 		t.Skip("TEST_DATABASE_URL tidak diisi; tes integrasi dilewati")
 	}
 	ctx := context.Background()
-	pool, err := pgxpool.New(ctx, url)
+	cfg, err := pgxpool.ParseConfig(url)
+	if err != nil {
+		t.Fatalf("TEST_DATABASE_URL tidak valid: %v", err)
+	}
+	cfg.MaxConns = 16 // cukup untuk tes konkurensi + satu koneksi pemegang kunci
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		t.Fatalf("gagal konek database: %v", err)
 	}
 	if err := pool.Ping(ctx); err != nil {
 		t.Fatalf("ping database gagal: %v", err)
 	}
+
+	lockProcess(t, url)
 
 	e := &Env{T: t, Pool: pool, Groups: group.NewRepository(pool),
 		Prefix: fmt.Sprintf("tu-%d", time.Now().UnixNano())}
@@ -63,9 +71,49 @@ func NewEnv(t *testing.T) *Env {
 		_, _ = pool.Exec(ctx, `DELETE FROM groups WHERE owner_id IN (SELECT id FROM users WHERE email LIKE $1)`, like)
 		_, _ = pool.Exec(ctx, `DELETE FROM group_members WHERE user_id IN (SELECT id FROM users WHERE email LIKE $1)`, like)
 		_, _ = pool.Exec(ctx, `DELETE FROM users WHERE email LIKE $1`, like)
+
 		pool.Close()
 	})
 	return e
+}
+
+// testLockKey adalah kunci advisory yang menyerialkan tes integrasi ("GEOP").
+const testLockKey int64 = 0x47454F50
+
+var (
+	processLockOnce sync.Once
+	processLockErr  error
+	processLockConn *pgx.Conn // sengaja tidak pernah ditutup: Postgres melepas kunci saat proses tes berakhir
+)
+
+// lockProcess menyerialkan tes integrasi di seluruh paket: kunci advisory Postgres diambil SEKALI
+// per proses tes (satu koneksi khusus) dan dipegang sampai proses berakhir.
+//
+// Dompet sistem (external/escrow/platform) dipakai bersama. Tanpa serialisasi, tes dari paket
+// berbeda yang berjalan paralel (perilaku bawaan `go test ./...`) saling mengubah saldo dan
+// membuat tes berbasis selisih tidak stabil.
+//
+// Kunci dipegang per proses, bukan per Env: satu tes boleh memanggil NewEnv berkali-kali
+// (mis. dua grup) tanpa menunggu kunci miliknya sendiri. Jika proses mati, kunci lepas otomatis.
+func lockProcess(t *testing.T, url string) {
+	t.Helper()
+	processLockOnce.Do(func() {
+		ctx := context.Background()
+		conn, err := pgx.Connect(ctx, url)
+		if err != nil {
+			processLockErr = err
+			return
+		}
+		if _, err := conn.Exec(ctx, `SELECT pg_advisory_lock($1)`, testLockKey); err != nil {
+			_ = conn.Close(ctx)
+			processLockErr = err
+			return
+		}
+		processLockConn = conn
+	})
+	if processLockErr != nil {
+		t.Fatalf("gagal mengambil kunci tes integrasi: %v", processLockErr)
+	}
 }
 
 func (e *Env) NewUser(name string) string {
@@ -102,11 +150,7 @@ type GroupSpec struct {
 	DrawMethod string // default random
 }
 
-// NewGroup membuat grup beserta anggota aktifnya (pemilik + peserta yang disetujui).
-// Mengembalikan grup dan anggota aktif berurutan menurut waktu bergabung (pemilik pertama).
-func (e *Env) NewGroup(spec GroupSpec) (*group.Group, []group.Member) {
-	e.T.Helper()
-	ctx := context.Background()
+func (spec GroupSpec) withDefaults() GroupSpec {
 	if spec.Slots == 0 {
 		spec.Slots = 3
 	}
@@ -125,18 +169,47 @@ func (e *Env) NewGroup(spec GroupSpec) (*group.Group, []group.Member) {
 	if spec.DrawMethod == "" {
 		spec.DrawMethod = "random"
 	}
+	return spec
+}
+
+// NewGroup membuat grup beserta anggota aktifnya (pemilik + peserta yang disetujui), semuanya
+// pengguna baru. Mengembalikan grup dan anggota aktif berurutan menurut waktu bergabung
+// (pemilik pertama).
+func (e *Env) NewGroup(spec GroupSpec) (*group.Group, []group.Member) {
+	e.T.Helper()
+	spec = spec.withDefaults()
+	e.seq++
+	n := e.seq
+	users := []string{e.NewUser(fmt.Sprintf("owner%d", n))}
+	for i := 1; i < spec.Active; i++ {
+		users = append(users, e.NewUser(fmt.Sprintf("m%d-%d", n, i)))
+	}
+	return e.NewGroupFor(spec, users...)
+}
+
+// NewGroupFor membuat grup dari pengguna yang sudah ada: userIDs[0] pemilik, sisanya peserta
+// yang disetujui. Dipakai untuk skenario satu pengguna berada di beberapa grup.
+// Spec.Active diabaikan (selalu len(userIDs)); Spec.Slots kosong berarti len(userIDs).
+func (e *Env) NewGroupFor(spec GroupSpec, userIDs ...string) (*group.Group, []group.Member) {
+	e.T.Helper()
+	ctx := context.Background()
+	if spec.Slots == 0 {
+		spec.Slots = len(userIDs)
+	}
+	spec.Active = len(userIDs)
+	spec = spec.withDefaults()
 
 	e.seq++
 	g := &group.Group{
-		OwnerID: e.NewUser(fmt.Sprintf("owner%d", e.seq)), Name: "Grup Uji", ContributionAmount: spec.Amount,
+		OwnerID: userIDs[0], Name: "Grup Uji", ContributionAmount: spec.Amount,
 		PeriodType: spec.Period, SlotCount: spec.Slots, StartDate: spec.StartDate, LateFee: spec.LateFee,
 		DrawMethod: spec.DrawMethod, MinLevelRank: 1, InviteCode: fmt.Sprintf("%s-g%d", e.Prefix, e.seq),
 	}
 	if err := e.Groups.Create(ctx, g); err != nil {
 		e.T.Fatalf("buat grup: %v", err)
 	}
-	for i := 1; i < spec.Active; i++ {
-		m, err := e.Groups.AddMember(ctx, g.ID, e.NewUser(fmt.Sprintf("m%d-%d", e.seq, i)))
+	for _, uid := range userIDs[1:] {
+		m, err := e.Groups.AddMember(ctx, g.ID, uid)
 		if err != nil {
 			e.T.Fatal(err)
 		}
@@ -227,6 +300,13 @@ func cleanupLedger(ctx context.Context, t *testing.T, pool *pgxpool.Pool, like s
 		      WHERE w.user_id IN (SELECT id FROM users WHERE email LIKE $1))`,
 		`UPDATE wallets w SET balance = COALESCE((SELECT SUM(amount) FROM ledger_entries l WHERE l.wallet_id = w.id), 0)
 		  WHERE w.type <> 'user'`,
+		// Menghapus baris dari tengah riwayat dompet sistem membuat balance_after baris yang tersisa
+		// tidak lagi cocok dengan saldo berjalan; hitung ulang agar rantainya tetap benar.
+		`UPDATE ledger_entries l SET balance_after = x.running
+		   FROM (SELECT id, (SUM(amount) OVER (PARTITION BY wallet_id ORDER BY id))::bigint AS running
+		           FROM ledger_entries
+		          WHERE wallet_id IN (SELECT id FROM wallets WHERE type <> 'user')) x
+		  WHERE l.id = x.id AND l.balance_after <> x.running`,
 		`DELETE FROM wallets WHERE user_id IN (SELECT id FROM users WHERE email LIKE $1)`,
 	}
 	for _, sql := range steps {
