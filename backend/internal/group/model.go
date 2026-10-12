@@ -21,6 +21,9 @@ var (
 	ErrGroupNotOpen  = errors.New("grup tidak lagi menerima anggota")
 	ErrForbidden     = errors.New("tidak punya akses")
 	ErrLevelTooLow   = errors.New("level reputasi belum memenuhi syarat grup")
+
+	ErrCannotCreateGroup = errors.New("level reputasi Anda belum boleh membuat grup")
+	ErrGroupTooExpensive = errors.New("iuran grup melebihi batas untuk level reputasi Anda")
 )
 
 // ValidationError adalah kesalahan input dari pengguna (dipetakan ke HTTP 400).

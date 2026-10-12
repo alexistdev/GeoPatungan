@@ -71,11 +71,14 @@ func (s *Service) Commit(ctx context.Context, userID, groupID string) (*Draw, er
 	for i, m := range members {
 		w := 1.0 // random: semua bobot setara
 		if g.DrawMethod == "weighted" {
-			rank, err := s.levels.Rank(ctx, m.UserID)
+			pol, err := s.levels.Policy(ctx, m.UserID)
 			if err != nil {
 				return nil, err
 			}
-			w = WeightForRank(rank)
+			w = pol.DrawWeight
+			if !(w > 0) {
+				w = 1 // kebijakan tanpa bobot dianggap setara; ComputeOrder menolak bobot <= 0
+			}
 		}
 		entries[i] = Entry{MemberID: m.ID, UserName: m.UserName, Weight: w}
 	}

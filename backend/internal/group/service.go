@@ -28,16 +28,27 @@ type Store interface {
 	RejectMember(ctx context.Context, groupID, memberID string) error
 }
 
-// LevelProvider mengembalikan level reputasi (1..3) seorang pengguna.
-type LevelProvider interface {
-	Rank(ctx context.Context, userID string) (int, error)
+// Policy adalah hak dan batas seorang pengguna menurut level reputasinya.
+type Policy struct {
+	Rank           int     // level reputasi 1..3
+	DrawWeight     float64 // bobot kocokan berbobot (1..3)
+	CanCreateGroup bool    // boleh menjadi bandar (membuat grup)
+	MaxGroupValue  int64   // iuran maksimal grup yang boleh dibuat/diikuti; 0 = tanpa batas
 }
 
-// BaseLevel menganggap semua pengguna level 1. Dipakai sampai modul reputasi
-// tersedia, lalu diganti implementasi yang membaca user_reputations.
+// LevelProvider memberi kebijakan seorang pengguna. Implementasi sebenarnya ada di paket
+// reputation (dihitung dari data nyata); group tidak mengimpornya supaya tidak melingkar.
+type LevelProvider interface {
+	Policy(ctx context.Context, userID string) (Policy, error)
+}
+
+// BaseLevel menganggap semua pengguna level 1 tanpa batas. Dipakai di tes dan sebagai
+// pengganti jika modul reputasi tidak dipasang.
 type BaseLevel struct{}
 
-func (BaseLevel) Rank(context.Context, string) (int, error) { return 1, nil }
+func (BaseLevel) Policy(context.Context, string) (Policy, error) {
+	return Policy{Rank: 1, DrawWeight: 1, CanCreateGroup: true}, nil
+}
 
 type Service struct {
 	store  Store
@@ -64,6 +75,16 @@ func (s *Service) Create(ctx context.Context, ownerID string, in CreateInput) (*
 	g, err := s.validate(ownerID, in)
 	if err != nil {
 		return nil, err
+	}
+	pol, err := s.levels.Policy(ctx, ownerID)
+	if err != nil {
+		return nil, err
+	}
+	if !pol.CanCreateGroup {
+		return nil, ErrCannotCreateGroup
+	}
+	if pol.MaxGroupValue > 0 && g.ContributionAmount > pol.MaxGroupValue {
+		return nil, ErrGroupTooExpensive
 	}
 
 	// Kode undangan acak bisa (sangat jarang) bentrok; coba ulang beberapa kali.
@@ -147,12 +168,15 @@ func (s *Service) Join(ctx context.Context, userID, inviteCode string) (*Group, 
 		return nil, ErrGroupFull
 	}
 
-	rank, err := s.levels.Rank(ctx, userID)
+	pol, err := s.levels.Policy(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	if rank < g.MinLevelRank {
+	if pol.Rank < g.MinLevelRank {
 		return nil, ErrLevelTooLow
+	}
+	if pol.MaxGroupValue > 0 && g.ContributionAmount > pol.MaxGroupValue {
+		return nil, ErrGroupTooExpensive
 	}
 
 	m, err := s.store.AddMember(ctx, g.ID, userID)

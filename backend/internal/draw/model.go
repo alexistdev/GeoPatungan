@@ -43,16 +43,3 @@ type Entry struct {
 	Score    *float64 `json:"score,omitempty"`
 	Order    *int     `json:"turn_order"`
 }
-
-// WeightForRank memetakan level reputasi ke bobot kocokan. Rasio dibatasi 3:1
-// supaya anggota baru tetap punya peluang yang berarti.
-func WeightForRank(rank int) float64 {
-	switch {
-	case rank <= 1:
-		return 1
-	case rank == 2:
-		return 2
-	default:
-		return 3
-	}
-}

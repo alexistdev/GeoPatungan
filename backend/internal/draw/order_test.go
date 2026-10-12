@@ -211,18 +211,6 @@ func TestCommitAndVerify(t *testing.T) {
 	}
 }
 
-func TestWeightForRank(t *testing.T) {
-	want := map[int]float64{-1: 1, 0: 1, 1: 1, 2: 2, 3: 3, 4: 3, 99: 3}
-	for rank, w := range want {
-		if got := WeightForRank(rank); got != w {
-			t.Errorf("WeightForRank(%d) = %v, want %v", rank, got, w)
-		}
-	}
-	if WeightForRank(3)/WeightForRank(1) > 3 {
-		t.Error("rasio bobot maksimal harus 3:1")
-	}
-}
-
 func TestNewSeed(t *testing.T) {
 	a, err := NewSeed(strings.NewReader(strings.Repeat("x", 64)))
 	if err != nil || len(a) != 32 {

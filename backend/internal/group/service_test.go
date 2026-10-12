@@ -129,9 +129,22 @@ func (f *fakeStore) RejectMember(_ context.Context, groupID, memberID string) er
 	return f.setStatus(groupID, memberID, "pending", "removed")
 }
 
+// fixedLevel memberi semua pengguna level yang sama; bobot = level, tanpa batas nilai.
 type fixedLevel int
 
-func (l fixedLevel) Rank(context.Context, string) (int, error) { return int(l), nil }
+func (l fixedLevel) Policy(context.Context, string) (Policy, error) {
+	return Policy{Rank: int(l), DrawWeight: float64(l), CanCreateGroup: true}, nil
+}
+
+// policyFor memberi kebijakan berbeda per pengguna (default level 1).
+type policyFor map[string]Policy
+
+func (p policyFor) Policy(_ context.Context, userID string) (Policy, error) {
+	if v, ok := p[userID]; ok {
+		return v, nil
+	}
+	return Policy{Rank: 1, DrawWeight: 1, CanCreateGroup: true}, nil
+}
 
 func newTestService(store Store, level int) *Service {
 	s := NewService(store, fixedLevel(level))
@@ -477,5 +490,75 @@ func TestNewInviteCode(t *testing.T) {
 			t.Fatalf("kode %q duplikat", code)
 		}
 		seen[code] = true
+	}
+}
+
+func TestCreateRespectsReputationPolicy(t *testing.T) {
+	ctx := context.Background()
+	svc := func(p Policy) *Service {
+		s := NewService(newFakeStore(), policyFor{"owner": p})
+		s.now = func() time.Time { return time.Date(2026, 10, 11, 9, 0, 0, 0, time.UTC) }
+		return s
+	}
+
+	t.Run("level yang belum boleh membuat grup", func(t *testing.T) {
+		store := newFakeStore()
+		s := NewService(store, policyFor{"owner": {Rank: 1, DrawWeight: 1, CanCreateGroup: false}})
+		s.now = func() time.Time { return time.Date(2026, 10, 11, 9, 0, 0, 0, time.UTC) }
+		if _, err := s.Create(ctx, "owner", validInput()); !errors.Is(err, ErrCannotCreateGroup) {
+			t.Errorf("err = %v, want ErrCannotCreateGroup", err)
+		}
+		if len(store.groups) != 0 {
+			t.Error("grup tidak boleh tersimpan")
+		}
+	})
+	t.Run("iuran melebihi batas level", func(t *testing.T) {
+		in := validInput() // 500.000
+		if _, err := svc(Policy{Rank: 1, CanCreateGroup: true, MaxGroupValue: 499_999}).Create(ctx, "owner", in); !errors.Is(err, ErrGroupTooExpensive) {
+			t.Errorf("err = %v, want ErrGroupTooExpensive", err)
+		}
+		if _, err := svc(Policy{Rank: 1, CanCreateGroup: true, MaxGroupValue: 500_000}).Create(ctx, "owner", in); err != nil {
+			t.Errorf("tepat di batas seharusnya diterima: %v", err)
+		}
+		if _, err := svc(Policy{Rank: 3, CanCreateGroup: true, MaxGroupValue: 0}).Create(ctx, "owner", in); err != nil {
+			t.Errorf("tanpa batas seharusnya diterima: %v", err)
+		}
+	})
+	t.Run("validasi input didahulukan dari kebijakan", func(t *testing.T) {
+		in := validInput()
+		in.Name = "a"
+		_, err := svc(Policy{Rank: 1, CanCreateGroup: false}).Create(ctx, "owner", in)
+		var verr ValidationError
+		if !errors.As(err, &verr) {
+			t.Errorf("err = %v, want ValidationError (400) sebelum pengecekan izin (403)", err)
+		}
+	})
+}
+
+func TestJoinRespectsGroupValueLimit(t *testing.T) {
+	ctx := context.Background()
+	store := newFakeStore()
+	owner := NewService(store, BaseLevel{})
+	owner.now = func() time.Time { return time.Date(2026, 10, 11, 9, 0, 0, 0, time.UTC) }
+	g, err := owner.Create(ctx, "owner", validInput()) // iuran 500.000
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	join := func(user string, p Policy) error {
+		_, err := NewService(store, policyFor{user: p}).Join(ctx, user, g.InviteCode)
+		return err
+	}
+	if err := join("low", Policy{Rank: 1, MaxGroupValue: 100_000}); !errors.Is(err, ErrGroupTooExpensive) {
+		t.Errorf("batas di bawah iuran: err = %v, want ErrGroupTooExpensive", err)
+	}
+	if err := join("edge", Policy{Rank: 1, MaxGroupValue: 500_000}); err != nil {
+		t.Errorf("tepat di batas: %v", err)
+	}
+	if err := join("free", Policy{Rank: 1}); err != nil {
+		t.Errorf("tanpa batas: %v", err)
+	}
+	if _, err := store.FindMember(ctx, g.ID, "low"); !errors.Is(err, ErrNotFound) {
+		t.Error("yang ditolak tidak boleh tercatat sebagai anggota")
 	}
 }

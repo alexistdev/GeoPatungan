@@ -106,14 +106,15 @@ func (f *fakeStore) Get(_ context.Context, groupID string) (*Draw, error) {
 	return &cp, nil
 }
 
-// rankByUser memberi level berbeda per pengguna.
+// rankByUser memberi level berbeda per pengguna; bobot kocokan = level (1..3).
 type rankByUser map[string]int
 
-func (r rankByUser) Rank(_ context.Context, userID string) (int, error) {
+func (r rankByUser) Policy(_ context.Context, userID string) (group.Policy, error) {
+	rank := 1
 	if v, ok := r[userID]; ok {
-		return v, nil
+		rank = v
 	}
-	return 1, nil
+	return group.Policy{Rank: rank, DrawWeight: float64(rank), CanCreateGroup: true}, nil
 }
 
 type fixture struct {

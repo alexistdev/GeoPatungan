@@ -155,7 +155,8 @@ func fail(w http.ResponseWriter, op string, err error, notFoundMsg string) {
 			notFoundMsg = ErrNotFound.Error()
 		}
 		httpx.Error(w, http.StatusNotFound, notFoundMsg)
-	case errors.Is(err, ErrForbidden), errors.Is(err, ErrLevelTooLow):
+	case errors.Is(err, ErrForbidden), errors.Is(err, ErrLevelTooLow),
+		errors.Is(err, ErrCannotCreateGroup), errors.Is(err, ErrGroupTooExpensive):
 		httpx.Error(w, http.StatusForbidden, err.Error())
 	case errors.Is(err, ErrAlreadyMember), errors.Is(err, ErrGroupFull), errors.Is(err, ErrGroupNotOpen):
 		httpx.Error(w, http.StatusConflict, err.Error())

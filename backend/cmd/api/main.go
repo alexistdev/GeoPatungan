@@ -21,8 +21,10 @@ import (
 	"github.com/alexistdev/geopatungan/internal/database"
 	"github.com/alexistdev/geopatungan/internal/draw"
 	"github.com/alexistdev/geopatungan/internal/group"
+	"github.com/alexistdev/geopatungan/internal/kyc"
 	"github.com/alexistdev/geopatungan/internal/middleware"
 	"github.com/alexistdev/geopatungan/internal/payment"
+	"github.com/alexistdev/geopatungan/internal/reputation"
 	"github.com/alexistdev/geopatungan/internal/round"
 	"github.com/alexistdev/geopatungan/internal/settings"
 	"github.com/alexistdev/geopatungan/internal/topup"
@@ -46,7 +48,8 @@ func main() {
 	authHandler := auth.NewHandler(auth.NewService(userRepo, tokens))
 	userHandler := user.NewHandler(userRepo)
 	groupRepo := group.NewRepository(db)
-	levels := group.BaseLevel{} // diganti implementasi reputasi nanti
+	reputationSvc := reputation.NewService(reputation.NewRepository(db))
+	levels := reputationSvc // level dihitung dari data nyata (KYC, arisan tuntas, keterlambatan)
 	groupHandler := group.NewHandler(group.NewService(groupRepo, levels))
 	drawHandler := draw.NewHandler(draw.NewService(groupRepo, draw.NewRepository(db), levels))
 	roundHandler := round.NewHandler(round.NewService(round.NewRepository(db), groupRepo))
@@ -55,6 +58,8 @@ func main() {
 	topupHandler := topup.NewHandler(topup.NewService(topup.NewRepository(db), settingsRepo))
 	walletHandler := wallet.NewHandler(wallet.NewService(wallet.NewRepository(db)))
 	withdrawalHandler := withdrawal.NewHandler(withdrawal.NewService(withdrawal.NewRepository(db), settingsRepo))
+	reputationHandler := reputation.NewHandler(reputationSvc)
+	kycHandler := kyc.NewHandler(kyc.NewService(kyc.NewRepository(db)))
 	paymentHandler := payment.NewHandler(payment.NewRepository(db))
 	contributionHandler := contribution.NewHandler(contribution.NewService(contribution.NewRepository(db), groupRepo))
 
@@ -81,6 +86,8 @@ func main() {
 			r.Get("/me", userHandler.Me)
 			r.Get("/me/contributions", contributionHandler.Mine)
 			r.Get("/payment-info", settingsHandler.PaymentInfo)
+			r.Get("/me/reputation", reputationHandler.Me)
+			r.Route("/me/kyc", kycHandler.Routes)
 			r.Route("/contributions", paymentHandler.Routes)
 			r.Route("/wallet", func(r chi.Router) {
 				walletHandler.Routes(r)
@@ -93,6 +100,8 @@ func main() {
 				walletHandler.AdminRoutes(r)
 				topupHandler.AdminRoutes(r)
 				withdrawalHandler.AdminRoutes(r)
+				reputationHandler.AdminRoutes(r)
+				kycHandler.AdminRoutes(r)
 			})
 			r.Route("/groups", func(r chi.Router) {
 				groupHandler.Routes(r)
