@@ -1,73 +1,91 @@
+<app-page-title title="Pengaturan" [crumbs]="[{ label: 'Admin', link: '/admin' }]" />
+
 @if (flash(); as msg) {
-  <div class="alert info" role="status">{{ msg }}</div>
+  <div class="alert alert-success" role="status">{{ msg }}</div>
 }
 @if (error(); as msg) {
-  <div class="alert error" role="alert">{{ msg }}</div>
+  <div class="alert alert-danger" role="alert">{{ msg }}</div>
 }
 
-<section class="card" aria-labelledby="h-set">
-  <h2 id="h-set">Pengaturan platform</h2>
-  @if (settings(); as s) {
-    @if (editing() === 'settings') {
-      <app-action-form [fields]="settingsFields(s)" submitLabel="Simpan pengaturan" [busy]="busy()" [error]="formError()"
-        (submitted)="saveSettings($event)" (cancelled)="close()" />
-    } @else {
-      <dl class="kv">
-        <dt>Biaya platform</dt><dd>{{ s.platform_fee_bps / 100 }}%</dd>
-        <dt>Top-up</dt><dd>Rp{{ s.topup_min_amount.toLocaleString('id-ID') }} – Rp{{ s.topup_max_amount.toLocaleString('id-ID') }}</dd>
-        <dt>Penarikan minimal</dt><dd>Rp{{ s.withdraw_min_amount.toLocaleString('id-ID') }}</dd>
-        <dt>Batas transfer top-up</dt><dd>{{ s.topup_expiry_hours }} jam</dd>
-      </dl>
-      <button class="btn" type="button" (click)="open('settings')">Ubah</button>
-    }
-  } @else {
-    <p class="muted">Memuat…</p>
-  }
-</section>
-
-<section class="card spaced" aria-labelledby="h-bank">
-  <div class="row spread">
-    <h2 id="h-bank">Rekening tujuan transfer</h2>
-    @if (editing() !== 'new') {
-      <button class="btn primary" type="button" (click)="open('new')">Tambah rekening</button>
-    }
-  </div>
-  <p class="muted small">Pengguna melihat rekening aktif saat membuat top-up. Tanpa rekening aktif, top-up tidak bisa dibuat.</p>
-
-  @if (editing() === 'new') {
-    <app-action-form [fields]="bankFields()" submitLabel="Tambah rekening" [busy]="busy()" [error]="formError()"
-      (submitted)="saveBank(null, $event)" (cancelled)="close()" />
-  }
-
-  @if (loading()) {
-    <p class="muted">Memuat…</p>
-  } @else if (banks().length === 0) {
-    <p class="alert warn">Belum ada rekening. Tambahkan minimal satu agar pengguna bisa top-up.</p>
-  } @else {
-    <ul class="list">
-      @for (b of banks(); track b.id) {
-        <li>
-          @if (editing() === b.id) {
-            <app-action-form [fields]="bankFields(b)" submitLabel="Simpan rekening" [busy]="busy()" [error]="formError()"
-              (submitted)="saveBank(b, $event)" (cancelled)="close()" />
+<div class="row">
+  <div class="col-xl-5">
+    <div class="card" aria-labelledby="h-set">
+      <div class="card-header"><h5 class="card-title mb-0" id="h-set">Pengaturan platform</h5></div>
+      <div class="card-body">
+        @if (settings(); as s) {
+          @if (editing() === 'settings') {
+            <app-action-form [fields]="settingsFields(s)" submitLabel="Simpan pengaturan" [busy]="busy()" [error]="formError()"
+              (submitted)="saveSettings($event)" (cancelled)="close()" />
           } @else {
-            <div class="row spread">
-              <div>
-                <strong>{{ b.bank_name }}</strong> · <span class="mono">{{ b.account_number }}</span>
-                <div class="small">a.n. {{ b.account_holder }}</div>
-                @if (b.notes) {
-                  <div class="small muted">{{ b.notes }}</div>
-                }
-              </div>
-              <div class="row">
-                <span class="badge" [class.ok]="b.is_active">{{ b.is_active ? 'Aktif' : 'Nonaktif' }}</span>
-                <button class="btn" type="button" (click)="open(b.id)">Ubah</button>
-                <button class="btn" type="button" (click)="toggleBank(b)" [disabled]="busy()">{{ b.is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
-              </div>
+            <div class="table-responsive">
+              <table class="table table-borderless mb-3">
+                <tbody>
+                  <tr><th class="ps-0" scope="row">Biaya platform</th><td>{{ s.platform_fee_bps / 100 }}%</td></tr>
+                  <tr><th class="ps-0" scope="row">Top-up</th><td>Rp{{ s.topup_min_amount.toLocaleString('id-ID') }} – Rp{{ s.topup_max_amount.toLocaleString('id-ID') }}</td></tr>
+                  <tr><th class="ps-0" scope="row">Penarikan minimal</th><td>Rp{{ s.withdraw_min_amount.toLocaleString('id-ID') }}</td></tr>
+                  <tr><th class="ps-0" scope="row">Batas transfer top-up</th><td>{{ s.topup_expiry_hours }} jam</td></tr>
+                </tbody>
+              </table>
             </div>
+            <button class="btn btn-light" type="button" (click)="open('settings')">Ubah</button>
           }
-        </li>
-      }
-    </ul>
-  }
-</section>
+        } @else {
+          <p class="text-muted mb-0">Memuat…</p>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-7">
+    <div class="card" aria-labelledby="h-bank">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0" id="h-bank">Rekening tujuan transfer</h5>
+        @if (editing() !== 'new') {
+          <button class="btn btn-primary btn-sm" type="button" (click)="open('new')">Tambah rekening</button>
+        }
+      </div>
+      <div class="card-body">
+        <p class="text-muted fs-13">Pengguna melihat rekening aktif saat membuat top-up. Tanpa rekening aktif, top-up tidak bisa dibuat.</p>
+
+        @if (editing() === 'new') {
+          <div class="border rounded p-3 mb-3">
+            <app-action-form [fields]="bankFields()" submitLabel="Tambah rekening" [busy]="busy()" [error]="formError()"
+              (submitted)="saveBank(null, $event)" (cancelled)="close()" />
+          </div>
+        }
+
+        @if (loading()) {
+          <p class="text-muted mb-0">Memuat…</p>
+        } @else if (banks().length === 0) {
+          <div class="alert alert-warning mb-0">Belum ada rekening. Tambahkan minimal satu agar pengguna bisa top-up.</div>
+        } @else {
+          <ul class="list-group list-group-flush">
+            @for (b of banks(); track b.id) {
+              <li class="list-group-item px-0">
+                @if (editing() === b.id) {
+                  <app-action-form [fields]="bankFields(b)" submitLabel="Simpan rekening" [busy]="busy()" [error]="formError()"
+                    (submitted)="saveBank(b, $event)" (cancelled)="close()" />
+                } @else {
+                  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                      <strong>{{ b.bank_name }}</strong> · <span class="font-monospace">{{ b.account_number }}</span>
+                      <div class="fs-13">a.n. {{ b.account_holder }}</div>
+                      @if (b.notes) {
+                        <div class="fs-12 text-muted">{{ b.notes }}</div>
+                      }
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                      <span class="badge" [class]="b.is_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'">{{ b.is_active ? 'Aktif' : 'Nonaktif' }}</span>
+                      <button class="btn btn-light btn-sm" type="button" (click)="open(b.id)">Ubah</button>
+                      <button class="btn btn-light btn-sm" type="button" (click)="toggleBank(b)" [disabled]="busy()">{{ b.is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
+                    </div>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+  </div>
+</div>

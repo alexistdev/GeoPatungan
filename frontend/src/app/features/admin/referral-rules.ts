@@ -4,8 +4,10 @@ import { AdminService } from '../../core/admin';
 import { errorMessage } from '../../core/errors';
 import { CommissionRule } from '../../core/models';
 import { percentToBps } from './settings';
+import { PageTitle } from '../../shared/page-title';
 
 @Component({
+  imports: [PageTitle],
   selector: 'app-admin-referral-rules',
   templateUrl: './referral-rules.html',
 })

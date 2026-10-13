@@ -1,32 +1,58 @@
-<main class="auth">
-  <h1>Masuk ke GeoPatungan</h1>
-  <p class="muted">Arisan online yang transparan.</p>
+<app-auth-shell>
+  <div class="card mt-4">
+    <div class="card-body p-4">
+      <div class="text-center mt-2">
+        <h5 class="text-primary">Selamat datang kembali!</h5>
+        <p class="text-muted">Masuk untuk melanjutkan ke GeoPatungan.</p>
+      </div>
 
-  <form class="card stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-    @if (error(); as msg) {
-      <div class="alert error" role="alert">{{ msg }}</div>
-    }
+      <div class="p-2 mt-4">
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          @if (error(); as msg) {
+            <div class="alert alert-danger" role="alert">{{ msg }}</div>
+          }
 
-    <label class="field">
-      <span>Email</span>
-      <input type="email" formControlName="email" autocomplete="email" inputmode="email" />
-      @if (form.controls.email.touched && form.controls.email.invalid) {
-        <p class="err">Masukkan email yang valid.</p>
-      }
-    </label>
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" formControlName="email" placeholder="nama@contoh.com"
+                   autocomplete="email" inputmode="email"
+                   [class.is-invalid]="form.controls.email.touched && form.controls.email.invalid" />
+            @if (form.controls.email.touched && form.controls.email.invalid) {
+              <div class="invalid-feedback">Masukkan email yang valid.</div>
+            }
+          </div>
 
-    <label class="field">
-      <span>Kata sandi</span>
-      <input type="password" formControlName="password" autocomplete="current-password" />
-      @if (form.controls.password.touched && form.controls.password.invalid) {
-        <p class="err">Kata sandi wajib diisi.</p>
-      }
-    </label>
+          <div class="mb-3">
+            <label class="form-label" for="password">Kata sandi</label>
+            <div class="position-relative auth-pass-inputgroup mb-3">
+              <input [type]="showPassword() ? 'text' : 'password'" class="form-control pe-5" id="password" formControlName="password"
+                     placeholder="Masukkan kata sandi" autocomplete="current-password"
+                     [class.is-invalid]="form.controls.password.touched && form.controls.password.invalid" />
+              <button class="btn btn-link position-absolute end-0 top-0 text-decoration-none text-muted" type="button"
+                      [attr.aria-label]="showPassword() ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'" (click)="showPassword.set(!showPassword())">
+                <i class="align-middle" [class.ri-eye-fill]="!showPassword()" [class.ri-eye-off-fill]="showPassword()"></i>
+              </button>
+              @if (form.controls.password.touched && form.controls.password.invalid) {
+                <div class="invalid-feedback">Kata sandi wajib diisi.</div>
+              }
+            </div>
+          </div>
 
-    <button class="btn primary block" type="submit" [disabled]="loading()">
-      {{ loading() ? 'Memproses…' : 'Masuk' }}
-    </button>
-  </form>
+          <div class="mt-4">
+            <button class="btn btn-success w-100" type="submit" [disabled]="loading()">
+              @if (loading()) {
+                <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Memproses…
+              } @else {
+                Masuk
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
-  <p class="muted small">Belum punya akun? <a routerLink="/daftar">Daftar</a></p>
-</main>
+  <div class="mt-4 text-center">
+    <p class="mb-0">Belum punya akun? <a routerLink="/daftar" class="fw-semibold text-primary text-decoration-underline">Daftar</a></p>
+  </div>
+</app-auth-shell>

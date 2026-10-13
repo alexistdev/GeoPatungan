@@ -13,7 +13,6 @@ import { RupiahPipe } from '../../shared/rupiah-pipe';
   selector: 'app-topup-item',
   imports: [ReactiveFormsModule, RupiahPipe, DatePipe],
   templateUrl: './topup-item.html',
-  styleUrl: './wallet.scss',
 })
 export class TopupItem {
   private readonly wallets = inject(WalletService);

@@ -1,18 +1,17 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 
 import { errorMessage } from '../../core/errors';
 import { PaymentInfo, Topup } from '../../core/models';
 import { WalletService } from '../../core/wallet';
+import { PageTitle } from '../../shared/page-title';
 import { RupiahPipe } from '../../shared/rupiah-pipe';
 import { TopupItem } from './topup-item';
 
 @Component({
   selector: 'app-topup-page',
-  imports: [ReactiveFormsModule, RouterLink, RupiahPipe, TopupItem],
+  imports: [ReactiveFormsModule, RupiahPipe, TopupItem, PageTitle],
   templateUrl: './topup-page.html',
-  styleUrl: './wallet.scss',
 })
 export class TopupPage implements OnInit {
   private readonly wallets = inject(WalletService);

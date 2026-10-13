@@ -1,49 +1,51 @@
-<div class="page">
-  <a class="back" routerLink="/grup">← Grup</a>
+@if (loading()) {
+  <app-page-title title="Grup arisan" [crumbs]="[{ label: 'Grup arisan', link: '/grup' }]" />
+  <p class="text-muted">Memuat…</p>
+} @else if (error(); as msg) {
+  <app-page-title title="Grup arisan" [crumbs]="[{ label: 'Grup arisan', link: '/grup' }]" />
+  <div class="alert alert-danger" role="alert">{{ msg }}</div>
+} @else if (group(); as g) {
+  <app-page-title [title]="g.name" [crumbs]="[{ label: 'Grup arisan', link: '/grup' }]" />
 
-  @if (loading()) {
-    <p class="muted">Memuat…</p>
-  } @else if (error(); as msg) {
-    <div class="alert error" role="alert">{{ msg }}</div>
-  } @else if (group(); as g) {
-    <div class="row spread">
-      <h1>{{ g.name }}</h1>
-      <span class="badge" [class]="label(g.status).tone">{{ label(g.status).text }}</span>
-    </div>
+  @if (g.my_status === 'pending') {
+    <div class="alert alert-warning">Permintaan bergabung Anda menunggu persetujuan pemilik grup.</div>
+  }
 
-    @if (g.my_status === 'pending') {
-      <div class="alert warn">Permintaan bergabung Anda menunggu persetujuan pemilik grup.</div>
-    }
+  <div class="card">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <h5 class="mb-0">Informasi grup</h5>
+        <span class="badge" [class]="label(g.status).tone">{{ label(g.status).text }}</span>
+      </div>
+      <div class="row">
+        <div class="col-sm-6 col-lg-3 mb-3"><p class="text-muted mb-1">Iuran</p><h6 class="mb-0 money">{{ g.contribution_amount | rupiah }} ({{ period[g.period_type].toLowerCase() }})</h6></div>
+        <div class="col-sm-6 col-lg-3 mb-3"><p class="text-muted mb-1">Anggota</p><h6 class="mb-0">{{ g.active_members }} dari {{ g.slot_count }}</h6></div>
+        <div class="col-sm-6 col-lg-3 mb-3"><p class="text-muted mb-1">Dana per putaran</p><h6 class="mb-0 money">{{ g.contribution_amount * g.slot_count | rupiah }}</h6></div>
+        <div class="col-sm-6 col-lg-3 mb-3"><p class="text-muted mb-1">Mulai</p><h6 class="mb-0">{{ g.start_date }}</h6></div>
+        <div class="col-sm-6 col-lg-3 mb-3"><p class="text-muted mb-1">Denda terlambat</p><h6 class="mb-0 money">{{ g.late_fee | rupiah }}</h6></div>
+        <div class="col-sm-6 col-lg-3 mb-3"><p class="text-muted mb-1">Urutan penerima</p><h6 class="mb-0">{{ method[g.draw_method] }}</h6></div>
+        <div class="col-sm-6 col-lg-3 mb-3"><p class="text-muted mb-1">Level minimal</p><h6 class="mb-0">{{ g.min_level_rank }}</h6></div>
+      </div>
 
-    <section class="card">
-      <dl class="kv">
-        <dt>Iuran</dt><dd>{{ g.contribution_amount | rupiah }} ({{ period[g.period_type].toLowerCase() }})</dd>
-        <dt>Anggota</dt><dd>{{ g.active_members }} dari {{ g.slot_count }}</dd>
-        <dt>Dana per putaran</dt><dd>{{ g.contribution_amount * g.slot_count | rupiah }}</dd>
-        <dt>Mulai</dt><dd>{{ g.start_date }}</dd>
-        <dt>Denda terlambat</dt><dd>{{ g.late_fee | rupiah }}</dd>
-        <dt>Urutan penerima</dt><dd>{{ method[g.draw_method] }}</dd>
-        <dt>Level minimal</dt><dd>{{ g.min_level_rank }}</dd>
-      </dl>
       @if (isOwner() && g.invite_code) {
-        <div class="invite">
-          <div class="small muted">Kode undangan (bagikan ke calon anggota)</div>
-          <div class="row">
-            <code class="mono code">{{ g.invite_code }}</code>
-            <button class="btn" type="button" (click)="copy(inviteLink(g))">{{ copied() ? 'Tersalin ✓' : 'Salin tautan' }}</button>
+        <div class="border-top pt-3 mt-1">
+          <div class="text-muted fs-13 mb-1">Kode undangan (bagikan ke calon anggota)</div>
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            <code class="font-monospace fs-16 bg-light rounded px-3 py-2">{{ g.invite_code }}</code>
+            <button class="btn btn-soft-primary" type="button" (click)="copy(inviteLink(g))">
+              <i class="ri-links-line align-bottom me-1"></i> {{ copied() ? 'Tersalin ✓' : 'Salin tautan' }}
+            </button>
           </div>
         </div>
       }
-    </section>
-
-    <div class="stack spaced">
-      @if (isActiveMember()) {
-        <app-members-panel [group]="g" [members]="members()" [isOwner]="isOwner()" (changed)="load()" />
-        <app-draw-panel [group]="g" [members]="members()" [isOwner]="isOwner()" (changed)="load()" />
-        @if (g.status !== 'open') {
-          <app-rounds-panel [group]="g" (changed)="load()" />
-        }
-      }
     </div>
+  </div>
+
+  @if (isActiveMember()) {
+    <app-members-panel [group]="g" [members]="members()" [isOwner]="isOwner()" (changed)="load()" />
+    <app-draw-panel [group]="g" [members]="members()" [isOwner]="isOwner()" (changed)="load()" />
+    @if (g.status !== 'open') {
+      <app-rounds-panel [group]="g" (changed)="load()" />
+    }
   }
-</div>
+}

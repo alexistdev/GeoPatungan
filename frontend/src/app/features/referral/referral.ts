@@ -5,13 +5,14 @@ import { RouterLink } from '@angular/router';
 import { AccountService } from '../../core/account';
 import { errorMessage } from '../../core/errors';
 import { CommissionEntry, ReferralSummary } from '../../core/models';
+import { PageTitle } from '../../shared/page-title';
 import { RupiahPipe } from '../../shared/rupiah-pipe';
 
 const PAGE = 20;
 
 @Component({
   selector: 'app-referral',
-  imports: [RouterLink, RupiahPipe, DatePipe],
+  imports: [RouterLink, RupiahPipe, DatePipe, PageTitle],
   templateUrl: './referral.html',
 })
 export class Referral implements OnInit {

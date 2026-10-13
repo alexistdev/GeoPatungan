@@ -4,14 +4,14 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { errorMessage } from '../../core/errors';
 import { AppNotification } from '../../core/models';
 import { NotificationService } from '../../core/notifications';
+import { PageTitle } from '../../shared/page-title';
 
 const PAGE_SIZE = 20;
 
 @Component({
   selector: 'app-notifications',
-  imports: [DatePipe],
+  imports: [DatePipe, PageTitle],
   templateUrl: './notifications.html',
-  styleUrl: './notifications.scss',
 })
 export class Notifications implements OnInit {
   protected readonly service = inject(NotificationService);

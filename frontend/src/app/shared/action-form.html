@@ -1,21 +1,22 @@
-<form class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
   @if (error(); as msg) {
-    <div class="alert error" role="alert">{{ msg }}</div>
+    <div class="alert alert-danger" role="alert">{{ msg }}</div>
   }
   @for (f of fields(); track f.name) {
-    <label class="field">
-      <span>{{ f.label }}</span>
-      <input [type]="f.type ?? 'text'" [formControlName]="f.name" [attr.name]="f.name" autocomplete="off" [attr.inputmode]="f.type === 'number' ? 'numeric' : null" />
+    <div class="mb-3">
+      <label class="form-label">{{ f.label }}</label>
+      <input class="form-control" [type]="f.type ?? 'text'" [formControlName]="f.name" [attr.name]="f.name" autocomplete="off"
+             [attr.inputmode]="f.type === 'number' ? 'numeric' : null" [class.is-invalid]="message(f)" />
       @if (f.hint) {
-        <p class="hint">{{ f.hint }}</p>
+        <div class="form-text">{{ f.hint }}</div>
       }
       @if (message(f); as m) {
-        <p class="err">{{ m }}</p>
+        <div class="invalid-feedback">{{ m }}</div>
       }
-    </label>
+    </div>
   }
-  <div class="row">
-    <button class="btn primary" type="submit" [disabled]="busy()">{{ busy() ? 'Memproses…' : submitLabel() }}</button>
-    <button class="btn" type="button" (click)="cancelled.emit()" [disabled]="busy()">Batal</button>
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary" type="submit" [disabled]="busy()">{{ busy() ? 'Memproses…' : submitLabel() }}</button>
+    <button class="btn btn-light" type="button" (click)="cancelled.emit()" [disabled]="busy()">Batal</button>
   </div>
 </form>

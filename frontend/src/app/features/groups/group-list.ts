@@ -5,11 +5,12 @@ import { errorMessage } from '../../core/errors';
 import { GroupService } from '../../core/groups';
 import { Group } from '../../core/models';
 import { groupLabel, PERIOD_TEXT } from '../../shared/labels';
+import { PageTitle } from '../../shared/page-title';
 import { RupiahPipe } from '../../shared/rupiah-pipe';
 
 @Component({
   selector: 'app-group-list',
-  imports: [RouterLink, RupiahPipe],
+  imports: [RouterLink, RupiahPipe, PageTitle],
   templateUrl: './group-list.html',
 })
 export class GroupList implements OnInit {

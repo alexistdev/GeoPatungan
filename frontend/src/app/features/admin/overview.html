@@ -1,29 +1,46 @@
-<div class="grid">
-  <a class="card tile" routerLink="/admin/topup"><h2>Top-up</h2><p class="muted small">Verifikasi transfer masuk.</p></a>
-  <a class="card tile" routerLink="/admin/penarikan"><h2>Penarikan</h2><p class="muted small">Proses permintaan tarik dana.</p></a>
-  <a class="card tile" routerLink="/admin/kyc"><h2>Verifikasi KYC</h2><p class="muted small">Putuskan pengajuan verifikasi.</p></a>
-  <a class="card tile" routerLink="/admin/pengaturan"><h2>Pengaturan</h2><p class="muted small">Biaya, batas nominal, rekening bank.</p></a>
+<app-page-title title="Admin" />
+
+<div class="row">
+  @for (t of tiles; track t.path) {
+    <div class="col-xl-3 col-md-6">
+      <a class="card card-animate text-body text-decoration-none" [routerLink]="t.path">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <h6 class="mb-1">{{ t.title }}</h6>
+              <p class="text-muted fs-13 mb-0">{{ t.text }}</p>
+            </div>
+            <div class="avatar-sm flex-shrink-0">
+              <span class="avatar-title rounded fs-3" [class]="'bg-' + t.tone + '-subtle'"><i [class]="t.icon + ' text-' + t.tone"></i></span>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+  }
 </div>
 
-<section class="card spaced" aria-labelledby="h-rec">
-  <div class="row spread">
-    <h2 id="h-rec">Kesehatan ledger</h2>
-    <button class="btn" type="button" (click)="check()" [disabled]="loading()">{{ loading() ? 'Memeriksa…' : 'Periksa ulang' }}</button>
+<div class="card" aria-labelledby="h-rec">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="card-title mb-0" id="h-rec">Kesehatan ledger</h5>
+    <button class="btn btn-light btn-sm" type="button" (click)="check()" [disabled]="loading()">{{ loading() ? 'Memeriksa…' : 'Periksa ulang' }}</button>
   </div>
-  @if (error(); as msg) {
-    <div class="alert error" role="alert">{{ msg }}</div>
-  }
-  @if (report(); as r) {
-    @if (r.ok) {
-      <p><span class="badge ok">Konsisten</span></p>
-      <p class="small muted">{{ r.wallets_checked }} dompet dan {{ r.entries_checked }} entri ledger diperiksa; jumlah seluruh saldo nol.</p>
-    } @else {
-      <p><span class="badge danger">Ada masalah</span></p>
-      <ul class="small">
-        @for (p of r.problems ?? []; track $index) {
-          <li>{{ p }}</li>
-        }
-      </ul>
+  <div class="card-body">
+    @if (error(); as msg) {
+      <div class="alert alert-danger" role="alert">{{ msg }}</div>
     }
-  }
-</section>
+    @if (report(); as r) {
+      @if (r.ok) {
+        <p><span class="badge bg-success-subtle text-success">Konsisten</span></p>
+        <p class="fs-13 text-muted mb-0">{{ r.wallets_checked }} dompet dan {{ r.entries_checked }} entri ledger diperiksa; jumlah seluruh saldo nol.</p>
+      } @else {
+        <p><span class="badge bg-danger-subtle text-danger">Ada masalah</span></p>
+        <ul class="fs-13 mb-0">
+          @for (p of r.problems ?? []; track $index) {
+            <li>{{ p }}</li>
+          }
+        </ul>
+      }
+    }
+  </div>
+</div>

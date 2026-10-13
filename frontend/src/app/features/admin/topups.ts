@@ -6,11 +6,12 @@ import { AdminTopup } from '../../core/models';
 import { ActionForm, FieldSpec } from '../../shared/action-form';
 import { topupLabel } from '../../shared/labels';
 import { RupiahPipe } from '../../shared/rupiah-pipe';
+import { PageTitle } from '../../shared/page-title';
 import { ReviewState } from './review';
 
 @Component({
   selector: 'app-admin-topups',
-  imports: [ActionForm, RupiahPipe, DatePipe],
+  imports: [ActionForm, RupiahPipe, DatePipe, PageTitle],
   templateUrl: './topups.html',
 })
 export class AdminTopups implements OnInit {

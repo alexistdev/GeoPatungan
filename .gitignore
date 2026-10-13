@@ -22,3 +22,7 @@ frontend/.angular/
 # AI tooling
 .claude/
 CLAUDE.md
+
+# tema Velzon (komersial; jangan didistribusikan ulang). Pasang lokal: npm run theme:install, lihat docs/tema-velzon.md
+frontend/public/velzon/
+frontend/public/template/

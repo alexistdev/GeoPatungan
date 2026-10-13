@@ -6,15 +6,15 @@ import { errorMessage } from '../../core/errors';
 import { MeService } from '../../core/me';
 import { LedgerEntry } from '../../core/models';
 import { WalletService } from '../../core/wallet';
+import { PageTitle } from '../../shared/page-title';
 import { RupiahPipe } from '../../shared/rupiah-pipe';
 
 const PAGE = 20;
 
 @Component({
   selector: 'app-wallet-page',
-  imports: [RouterLink, RupiahPipe, DatePipe],
+  imports: [RouterLink, RupiahPipe, DatePipe, PageTitle],
   templateUrl: './wallet-page.html',
-  styleUrl: './wallet.scss',
 })
 export class WalletPage implements OnInit {
   private readonly me = inject(MeService);

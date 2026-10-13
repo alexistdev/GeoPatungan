@@ -4,11 +4,12 @@ import { Component, OnInit, inject } from '@angular/core';
 import { AdminService } from '../../core/admin';
 import { AdminKycRequest } from '../../core/models';
 import { ActionForm, FieldSpec } from '../../shared/action-form';
+import { PageTitle } from '../../shared/page-title';
 import { ReviewState } from './review';
 
 @Component({
   selector: 'app-admin-kyc',
-  imports: [ActionForm, DatePipe],
+  imports: [ActionForm, DatePipe, PageTitle],
   templateUrl: './kyc.html',
 })
 export class AdminKyc implements OnInit {

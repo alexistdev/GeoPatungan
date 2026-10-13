@@ -8,8 +8,9 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "contract": "node scripts/contract/check.mjs",
-    "test:contract": "node --test scripts/contract/",
-    "test:ci": "ng test --no-watch && npm run test:contract && npm run contract"
+    "test:contract": "node --test scripts/",
+    "test:ci": "ng test --no-watch && npm run test:contract && npm run contract",
+    "theme:install": "node scripts/velzon/install.mjs"
   },
   "private": true,
   "packageManager": "npm@11.19.1",

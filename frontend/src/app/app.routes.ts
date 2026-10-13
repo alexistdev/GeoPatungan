@@ -55,7 +55,6 @@ export const routes: Routes = [
       {
         path: 'admin',
         canActivate: [adminGuard],
-        loadComponent: () => import('./features/admin/admin-layout').then((m) => m.AdminLayout),
         children: [
           { path: '', pathMatch: 'full', loadComponent: () => import('./features/admin/overview').then((m) => m.AdminOverview), title: 'Admin - GeoPatungan' },
           { path: 'topup', loadComponent: () => import('./features/admin/topups').then((m) => m.AdminTopups), title: 'Top-up - Admin' },

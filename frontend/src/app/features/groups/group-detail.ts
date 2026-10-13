@@ -1,11 +1,11 @@
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth';
 import { errorMessage } from '../../core/errors';
 import { GroupService } from '../../core/groups';
 import { Group, Member } from '../../core/models';
 import { DRAW_TEXT, groupLabel, PERIOD_TEXT } from '../../shared/labels';
+import { PageTitle } from '../../shared/page-title';
 import { RupiahPipe } from '../../shared/rupiah-pipe';
 import { DrawPanel } from './draw-panel';
 import { MembersPanel } from './members-panel';
@@ -13,7 +13,7 @@ import { RoundsPanel } from './rounds-panel';
 
 @Component({
   selector: 'app-group-detail',
-  imports: [RouterLink, RupiahPipe, MembersPanel, DrawPanel, RoundsPanel],
+  imports: [RupiahPipe, MembersPanel, DrawPanel, RoundsPanel, PageTitle],
   templateUrl: './group-detail.html',
 })
 export class GroupDetail implements OnInit {

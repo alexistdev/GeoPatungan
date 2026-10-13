@@ -4,6 +4,7 @@ import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { AdminService } from '../../core/admin';
 import { errorMessage } from '../../core/errors';
 import { ReputationLevel } from '../../core/models';
+import { PageTitle } from '../../shared/page-title';
 
 /** Teks kosong = tanpa batas (null); selain itu bilangan bulat. */
 function optionalInt(text: string): number | null {
@@ -13,7 +14,7 @@ function optionalInt(text: string): number | null {
 
 @Component({
   selector: 'app-admin-reputation-levels',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, PageTitle],
   templateUrl: './reputation-levels.html',
 })
 export class AdminReputationLevels implements OnInit {

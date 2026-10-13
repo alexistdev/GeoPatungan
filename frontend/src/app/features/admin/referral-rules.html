@@ -1,41 +1,50 @@
-<section class="card">
-  <h2>Komisi referral</h2>
-  <p class="muted small">
-    Bagian dari <strong>biaya platform</strong> per iuran yang dibayarkan ke upline (hanya yang sudah terverifikasi KYC).
-    Total semua level tidak boleh melebihi 100%; sisanya tetap di platform.
-  </p>
+<app-page-title title="Komisi referral" [crumbs]="[{ label: 'Admin', link: '/admin' }]" />
 
-  @if (flash(); as msg) {
-    <div class="alert info" role="status">{{ msg }}</div>
-  }
-  @if (error(); as msg) {
-    <div class="alert error" role="alert">{{ msg }}</div>
-  }
+<div class="row justify-content-center">
+  <div class="col-xl-6">
+    <div class="card">
+      <div class="card-header"><h5 class="card-title mb-0">Aturan komisi</h5></div>
+      <div class="card-body">
+        <p class="text-muted fs-13">
+          Bagian dari <strong>biaya platform</strong> per iuran yang dibayarkan ke upline (hanya yang sudah terverifikasi KYC).
+          Total semua level tidak boleh melebihi 100%; sisanya tetap di platform.
+        </p>
 
-  @if (loading()) {
-    <p class="muted">Memuat…</p>
-  } @else {
-    <form class="stack" (submit)="$event.preventDefault(); save()" novalidate>
-      @for (v of values(); track $index) {
-        <label class="field">
-          <span>Level {{ $index + 1 }} (%)</span>
-          <input type="number" step="0.01" min="0" max="100" inputmode="decimal" [value]="v" (input)="set($index, $any($event.target).value)" />
-          @if (bad($index)) {
-            <p class="err">Isi 0 sampai 100.</p>
-          }
-        </label>
-      }
-
-      <p [class.alert]="over()" [class.error]="over()" role="status">
-        Total: <strong>{{ totalBps() / 100 }}%</strong> · platform menyimpan {{ platformKeeps() }}%
-        @if (over()) {
-          — melebihi 100%, tidak dapat disimpan.
+        @if (flash(); as msg) {
+          <div class="alert alert-success" role="status">{{ msg }}</div>
         }
-      </p>
+        @if (error(); as msg) {
+          <div class="alert alert-danger" role="alert">{{ msg }}</div>
+        }
 
-      <button class="btn primary" type="submit" [disabled]="saving() || !valid() || over()">
-        {{ saving() ? 'Menyimpan…' : 'Simpan aturan' }}
-      </button>
-    </form>
-  }
-</section>
+        @if (loading()) {
+          <p class="text-muted mb-0">Memuat…</p>
+        } @else {
+          <form (submit)="$event.preventDefault(); save()" novalidate>
+            @for (v of values(); track $index) {
+              <div class="mb-3">
+                <label class="form-label" [attr.for]="'level-' + $index">Level {{ $index + 1 }} (%)</label>
+                <input type="number" class="form-control" [id]="'level-' + $index" step="0.01" min="0" max="100" inputmode="decimal"
+                       [value]="v" [class.is-invalid]="bad($index)" (input)="set($index, $any($event.target).value)" />
+                @if (bad($index)) {
+                  <div class="invalid-feedback">Isi 0 sampai 100.</div>
+                }
+              </div>
+            }
+
+            <div class="alert" [class.alert-danger]="over()" [class.alert-info]="!over()" role="status">
+              Total: <strong>{{ totalBps() / 100 }}%</strong> · platform menyimpan {{ platformKeeps() }}%
+              @if (over()) {
+                — melebihi 100%, tidak dapat disimpan.
+              }
+            </div>
+
+            <button class="btn btn-primary" type="submit" [disabled]="saving() || !valid() || over()">
+              {{ saving() ? 'Menyimpan…' : 'Simpan aturan' }}
+            </button>
+          </form>
+        }
+      </div>
+    </div>
+  </div>
+</div>

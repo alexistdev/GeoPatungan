@@ -2,20 +2,19 @@ import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 
 import { errorMessage } from '../../core/errors';
 import { MeService } from '../../core/me';
 import { PaymentInfo, Withdrawal } from '../../core/models';
 import { WalletService } from '../../core/wallet';
 import { withdrawalLabel } from '../../shared/labels';
+import { PageTitle } from '../../shared/page-title';
 import { formatRupiah, RupiahPipe } from '../../shared/rupiah-pipe';
 
 @Component({
   selector: 'app-withdraw-page',
-  imports: [ReactiveFormsModule, RouterLink, RupiahPipe, DatePipe],
+  imports: [ReactiveFormsModule, RupiahPipe, DatePipe, PageTitle],
   templateUrl: './withdraw-page.html',
-  styleUrl: './wallet.scss',
 })
 export class WithdrawPage implements OnInit {
   private readonly wallets = inject(WalletService);

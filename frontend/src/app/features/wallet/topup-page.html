@@ -1,38 +1,46 @@
-<div class="page">
-  <a class="back" routerLink="/dompet">← Dompet</a>
-  <h1>Isi saldo</h1>
-  <p class="muted">Transfer bank manual. Saldo bertambah setelah admin memverifikasi transfer Anda.</p>
+<app-page-title title="Isi saldo" [crumbs]="[{ label: 'Dompet', link: '/dompet' }]" />
 
-  @if (error(); as msg) {
-    <div class="alert error" role="alert">{{ msg }}</div>
-  }
+<div class="row">
+  <div class="col-xl-5">
+    <div class="card">
+      <div class="card-header"><h5 class="card-title mb-0">Permintaan top-up baru</h5></div>
+      <div class="card-body">
+        <p class="text-muted">Transfer bank manual. Saldo bertambah setelah admin memverifikasi transfer Anda.</p>
 
-  <form class="card stack" [formGroup]="form" (ngSubmit)="create()" novalidate>
-    <label class="field">
-      <span>Nominal top-up (Rp)</span>
-      <input type="number" formControlName="amount" inputmode="numeric" step="1" />
-      @if (info(); as i) {
-        <p class="hint">Minimal {{ i.topup_min_amount | rupiah }}, maksimal {{ i.topup_max_amount | rupiah }}.</p>
-      }
-      @if (form.controls.amount.touched && form.controls.amount.invalid) {
-        <p class="err">Nominal di luar batas yang diizinkan.</p>
-      }
-    </label>
-    <button class="btn primary" type="submit" [disabled]="creating() || !info()">
-      {{ creating() ? 'Membuat…' : 'Buat permintaan top-up' }}
-    </button>
-  </form>
+        @if (error(); as msg) {
+          <div class="alert alert-danger" role="alert">{{ msg }}</div>
+        }
 
-  <h2 class="spaced">Permintaan Anda</h2>
-  @if (loading()) {
-    <p class="muted">Memuat…</p>
-  } @else if (topups().length === 0) {
-    <p class="card muted">Belum ada permintaan top-up.</p>
-  } @else {
-    <div class="stack">
+        <form [formGroup]="form" (ngSubmit)="create()" novalidate>
+          <div class="mb-3">
+            <label class="form-label" for="amount">Nominal top-up (Rp)</label>
+            <input type="number" class="form-control" id="amount" formControlName="amount" inputmode="numeric" step="1"
+                   [class.is-invalid]="form.controls.amount.touched && form.controls.amount.invalid" />
+            @if (info(); as i) {
+              <div class="form-text">Minimal {{ i.topup_min_amount | rupiah }}, maksimal {{ i.topup_max_amount | rupiah }}.</div>
+            }
+            @if (form.controls.amount.touched && form.controls.amount.invalid) {
+              <div class="invalid-feedback">Nominal di luar batas yang diizinkan.</div>
+            }
+          </div>
+          <button class="btn btn-primary" type="submit" [disabled]="creating() || !info()">
+            {{ creating() ? 'Membuat…' : 'Buat permintaan top-up' }}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-7">
+    <h5 class="mb-3">Permintaan Anda</h5>
+    @if (loading()) {
+      <p class="text-muted">Memuat…</p>
+    } @else if (topups().length === 0) {
+      <div class="card"><div class="card-body text-muted">Belum ada permintaan top-up.</div></div>
+    } @else {
       @for (t of topups(); track t.id) {
         <app-topup-item [topup]="t" [banks]="activeBanks()" (updated)="replace($event)" />
       }
-    </div>
-  }
+    }
+  </div>
 </div>

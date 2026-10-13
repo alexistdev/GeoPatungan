@@ -6,11 +6,12 @@ import { AdminWithdrawal } from '../../core/models';
 import { ActionForm, FieldSpec } from '../../shared/action-form';
 import { withdrawalLabel } from '../../shared/labels';
 import { RupiahPipe } from '../../shared/rupiah-pipe';
+import { PageTitle } from '../../shared/page-title';
 import { ReviewState } from './review';
 
 @Component({
   selector: 'app-admin-withdrawals',
-  imports: [ActionForm, RupiahPipe, DatePipe],
+  imports: [ActionForm, RupiahPipe, DatePipe, PageTitle],
   templateUrl: './withdrawals.html',
 })
 export class AdminWithdrawals implements OnInit {

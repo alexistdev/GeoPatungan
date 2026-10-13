@@ -4,12 +4,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth';
 import { errorMessage } from '../../core/errors';
+import { AuthShell } from '../../shared/auth-shell';
 
 @Component({
   selector: 'app-register',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, AuthShell],
   templateUrl: './register.html',
-  styleUrl: './auth.scss',
 })
 export class Register {
   private readonly auth = inject(AuthService);
@@ -24,6 +24,7 @@ export class Register {
     referral_code: [this.route.snapshot.queryParamMap.get('ref') ?? ''],
   });
   protected readonly loading = signal(false);
+  protected readonly showPassword = signal(false);
   protected readonly error = signal<string | null>(null);
 
   protected submit(): void {

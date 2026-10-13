@@ -3,11 +3,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { errorMessage } from '../../core/errors';
+import { PageTitle } from '../../shared/page-title';
 import { GroupService } from '../../core/groups';
 
 @Component({
   selector: 'app-group-join',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, PageTitle],
   templateUrl: './group-join.html',
 })
 export class GroupJoin implements OnInit {

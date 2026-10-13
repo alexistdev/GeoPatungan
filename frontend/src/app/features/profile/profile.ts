@@ -7,13 +7,13 @@ import { AuthService } from '../../core/auth';
 import { errorMessage } from '../../core/errors';
 import { MeService } from '../../core/me';
 import { KycState, ReputationProfile } from '../../core/models';
+import { PageTitle } from '../../shared/page-title';
 import { RupiahPipe } from '../../shared/rupiah-pipe';
 
 @Component({
   selector: 'app-profile',
-  imports: [ReactiveFormsModule, RupiahPipe, DatePipe],
+  imports: [ReactiveFormsModule, RupiahPipe, DatePipe, PageTitle],
   templateUrl: './profile.html',
-  styleUrl: './profile.scss',
 })
 export class Profile implements OnInit {
   protected readonly auth = inject(AuthService);

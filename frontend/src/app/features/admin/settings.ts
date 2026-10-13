@@ -4,6 +4,7 @@ import { AdminService, BankInput } from '../../core/admin';
 import { errorMessage } from '../../core/errors';
 import { AdminSettings, BankAccount } from '../../core/models';
 import { ActionForm, FieldSpec } from '../../shared/action-form';
+import { PageTitle } from '../../shared/page-title';
 
 /** Persen -> basis poin tanpa galat floating point (2,5 -> 250). */
 export function percentToBps(text: string): number {
@@ -12,7 +13,7 @@ export function percentToBps(text: string): number {
 
 @Component({
   selector: 'app-admin-settings',
-  imports: [ActionForm],
+  imports: [ActionForm, PageTitle],
   templateUrl: './settings.html',
 })
 export class AdminSettingsPage implements OnInit {

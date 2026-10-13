@@ -4,12 +4,12 @@ import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth';
 import { errorMessage } from '../../core/errors';
+import { AuthShell } from '../../shared/auth-shell';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, AuthShell],
   templateUrl: './login.html',
-  styleUrl: './auth.scss',
 })
 export class Login {
   private readonly auth = inject(AuthService);
@@ -20,6 +20,7 @@ export class Login {
     password: ['', [Validators.required]],
   });
   protected readonly loading = signal(false);
+  protected readonly showPassword = signal(false);
   protected readonly error = signal<string | null>(null);
 
   protected submit(): void {

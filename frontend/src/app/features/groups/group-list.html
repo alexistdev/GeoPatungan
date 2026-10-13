@@ -1,38 +1,45 @@
-<div class="page">
-  <div class="row spread">
-    <h1>Grup arisan</h1>
-    <div class="row">
-      <a class="btn" routerLink="/grup/gabung">Gabung dengan kode</a>
-      <a class="btn primary" routerLink="/grup/baru">Buat grup</a>
+<app-page-title title="Grup arisan" />
+
+<div class="d-flex flex-wrap gap-2 justify-content-end mb-3">
+  <a class="btn btn-light" routerLink="/grup/gabung"><i class="ri-key-2-line align-bottom me-1"></i> Gabung dengan kode</a>
+  <a class="btn btn-primary" routerLink="/grup/baru"><i class="ri-add-line align-bottom me-1"></i> Buat grup</a>
+</div>
+
+@if (error(); as msg) {
+  <div class="alert alert-danger" role="alert">{{ msg }}</div>
+}
+
+@if (loading()) {
+  <p class="text-muted">Memuat…</p>
+} @else if (items().length === 0) {
+  <div class="card">
+    <div class="card-body text-center py-5">
+      <div class="avatar-md mx-auto mb-3"><span class="avatar-title bg-primary-subtle rounded-circle fs-1"><i class="ri-group-line text-primary"></i></span></div>
+      <h5>Anda belum bergabung di grup mana pun</h5>
+      <p class="text-muted mb-0">Buat grup baru, atau gabung memakai kode undangan dari pemilik grup.</p>
     </div>
   </div>
-
-  @if (error(); as msg) {
-    <div class="alert error" role="alert">{{ msg }}</div>
-  }
-
-  @if (loading()) {
-    <p class="muted">Memuat…</p>
-  } @else if (items().length === 0) {
-    <div class="card">
-      <p>Anda belum bergabung di grup mana pun.</p>
-      <p class="muted small">Buat grup baru, atau gabung memakai kode undangan dari pemilik grup.</p>
-    </div>
-  } @else {
-    <div class="grid">
-      @for (g of items(); track g.id) {
-        <a class="card tile" [routerLink]="['/grup', g.id]">
-          <div class="row spread">
-            <h2>{{ g.name }}</h2>
-            <span class="badge" [class]="label(g.status).tone">{{ label(g.status).text }}</span>
+} @else {
+  <div class="row">
+    @for (g of items(); track g.id) {
+      <div class="col-xl-4 col-md-6">
+        <a class="card card-animate text-body text-decoration-none" [routerLink]="['/grup', g.id]">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <h5 class="mb-0">{{ g.name }}</h5>
+              <span class="badge" [class]="label(g.status).tone">{{ label(g.status).text }}</span>
+            </div>
+            <h4 class="fs-22 fw-semibold money mb-1">{{ g.contribution_amount | rupiah }}</h4>
+            <p class="text-muted mb-3">per {{ period[g.period_type].toLowerCase() }}</p>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="text-muted fs-13"><i class="ri-group-line align-bottom me-1"></i>{{ g.active_members }} dari {{ g.slot_count }} anggota</span>
+              @if (myStatusText(g); as t) {
+                <span class="badge bg-warning-subtle text-warning">{{ t }}</span>
+              }
+            </div>
           </div>
-          <p class="money">{{ g.contribution_amount | rupiah }} <span class="muted small">/ {{ period[g.period_type].toLowerCase() }}</span></p>
-          <p class="small muted">{{ g.active_members }} dari {{ g.slot_count }} anggota</p>
-          @if (myStatusText(g); as t) {
-            <span class="badge warn">{{ t }}</span>
-          }
         </a>
-      }
-    </div>
-  }
-</div>
+      </div>
+    }
+  </div>
+}

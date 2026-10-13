@@ -1,63 +1,71 @@
-<div class="row spread">
-  <label class="field filter">
-    <span>Status</span>
-    <select (change)="s.setStatus($any($event.target).value)">
-      @for (f of filters; track f.value) {
-        <option [value]="f.value" [selected]="f.value === s.status()">{{ f.text }}</option>
-      }
-    </select>
-  </label>
+<app-page-title title="Verifikasi KYC" [crumbs]="[{ label: 'Admin', link: '/admin' }]" />
+
+<div class="card">
+  <div class="card-body">
+    <div class="row align-items-end">
+      <div class="col-sm-6 col-md-4">
+        <label class="form-label" for="status-filter">Status</label>
+        <select class="form-select" id="status-filter" (change)="s.setStatus($any($event.target).value)">
+          @for (f of filters; track f.value) {
+            <option [value]="f.value" [selected]="f.value === s.status()">{{ f.text }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-8 mt-3 mt-md-0">
+        <p class="text-muted fs-13 mb-0">
+          Verifikasi dilakukan manual di luar aplikasi. Aplikasi tidak menyimpan nomor KTP; hanya keputusan Anda yang tercatat.
+        </p>
+      </div>
+    </div>
+  </div>
 </div>
-<p class="muted small">
-  Verifikasi dilakukan manual di luar aplikasi. Aplikasi tidak menyimpan nomor KTP; hanya keputusan Anda yang tercatat.
-</p>
 
 @if (s.flash(); as msg) {
-  <div class="alert info" role="status">{{ msg }}</div>
+  <div class="alert alert-success" role="status">{{ msg }}</div>
 }
 @if (s.error(); as msg) {
-  <div class="alert error" role="alert">{{ msg }}</div>
+  <div class="alert alert-danger" role="alert">{{ msg }}</div>
 }
 
 @if (s.loading()) {
-  <p class="muted">Memuat…</p>
+  <p class="text-muted">Memuat…</p>
 } @else if (s.items().length === 0) {
-  <p class="card muted">Tidak ada pengajuan pada status ini.</p>
+  <div class="card"><div class="card-body text-muted">Tidak ada pengajuan pada status ini.</div></div>
 } @else {
-  <div class="stack">
-    @for (r of s.items(); track r.id) {
-      <article class="card">
-        <div class="row spread">
-          <strong>{{ r.user_name }} <span class="muted small">{{ r.user_email }}</span></strong>
-          <span class="badge" [class.ok]="r.status === 'verified'" [class.danger]="r.status === 'rejected'" [class.warn]="r.status === 'pending'">
+  @for (r of s.items(); track r.id) {
+    <div class="card" data-testid="item">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <h6 class="mb-1">{{ r.user_name }} <span class="text-muted fs-13 fw-normal">{{ r.user_email }}</span></h6>
+          <span class="badge" [class]="r.status === 'verified' ? 'bg-success-subtle text-success' : r.status === 'rejected' ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning'">
             {{ statusText(r.status) }}
           </span>
         </div>
         @if (r.note) {
-          <p class="small">Catatan pemohon: {{ r.note }}</p>
+          <p class="fs-13 mb-1">Catatan pemohon: {{ r.note }}</p>
         }
-        <p class="small muted">Diajukan {{ r.submitted_at | date: 'd MMM y, HH:mm' }}</p>
+        <p class="fs-12 text-muted mb-1">Diajukan {{ r.submitted_at | date: 'd MMM y, HH:mm' }}</p>
         @if (r.review_note) {
-          <p class="small muted">Catatan admin: {{ r.review_note }}</p>
+          <p class="fs-12 text-muted mb-1">Catatan admin: {{ r.review_note }}</p>
         }
 
         @if (r.status === 'pending') {
-          @if (s.is(r.id, 'approve')) {
-            <app-action-form
-              [fields]="approveFields" submitLabel="Verifikasi" [busy]="s.busy()" [error]="s.actionError()"
-              (submitted)="approve(r, $event)" (cancelled)="s.close()" />
-          } @else if (s.is(r.id, 'reject')) {
-            <app-action-form
-              [fields]="rejectFields" submitLabel="Tolak pengajuan" [busy]="s.busy()" [error]="s.actionError()"
-              (submitted)="reject(r, $event)" (cancelled)="s.close()" />
-          } @else {
-            <div class="row">
-              <button class="btn primary" type="button" (click)="s.open(r.id, 'approve')">Verifikasi</button>
-              <button class="btn danger" type="button" (click)="s.open(r.id, 'reject')">Tolak</button>
-            </div>
-          }
+          <div class="mt-3">
+            @if (s.is(r.id, 'approve')) {
+              <app-action-form [fields]="approveFields" submitLabel="Verifikasi" [busy]="s.busy()" [error]="s.actionError()"
+                (submitted)="approve(r, $event)" (cancelled)="s.close()" />
+            } @else if (s.is(r.id, 'reject')) {
+              <app-action-form [fields]="rejectFields" submitLabel="Tolak pengajuan" [busy]="s.busy()" [error]="s.actionError()"
+                (submitted)="reject(r, $event)" (cancelled)="s.close()" />
+            } @else {
+              <div class="d-flex gap-2">
+                <button class="btn btn-success" type="button" (click)="s.open(r.id, 'approve')">Verifikasi</button>
+                <button class="btn btn-soft-danger" type="button" (click)="s.open(r.id, 'reject')">Tolak</button>
+              </div>
+            }
+          </div>
         }
-      </article>
-    }
-  </div>
+      </div>
+    </div>
+  }
 }

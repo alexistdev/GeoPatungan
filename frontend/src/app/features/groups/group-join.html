@@ -1,24 +1,28 @@
-<div class="page narrow">
-  <a class="back" routerLink="/grup">← Grup</a>
-  <h1>Gabung ke grup</h1>
+<app-page-title title="Gabung ke grup" [crumbs]="[{ label: 'Grup arisan', link: '/grup' }]" />
 
-  @if (joined(); as name) {
-    <div class="card stack">
-      <div class="alert info" role="status">Permintaan bergabung ke <strong>{{ name }}</strong> terkirim.</div>
-      <p class="muted small">Pemilik grup akan menyetujui permintaan Anda. Anda akan mendapat notifikasi.</p>
-      <button class="btn primary" type="button" (click)="toList()">Lihat grup saya</button>
+<div class="row justify-content-center">
+  <div class="col-md-8 col-xl-5">
+    <div class="card">
+      <div class="card-body">
+        @if (joined(); as name) {
+          <div class="alert alert-success" role="status">Permintaan bergabung ke <strong>{{ name }}</strong> terkirim.</div>
+          <p class="text-muted">Pemilik grup akan menyetujui permintaan Anda. Anda akan mendapat notifikasi.</p>
+          <button class="btn btn-primary" type="button" (click)="toList()">Lihat grup saya</button>
+        } @else {
+          <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+            @if (error(); as msg) {
+              <div class="alert alert-danger" role="alert">{{ msg }}</div>
+            }
+            <div class="mb-3">
+              <label class="form-label" for="code">Kode undangan</label>
+              <input type="text" class="form-control" id="code" formControlName="code" autocomplete="off" autocapitalize="off"
+                     [class.is-invalid]="form.controls.code.touched && form.controls.code.invalid" />
+              @if (form.controls.code.touched && form.controls.code.invalid) { <div class="invalid-feedback">Masukkan kode undangan.</div> }
+            </div>
+            <button class="btn btn-primary" type="submit" [disabled]="saving()">{{ saving() ? 'Mengirim…' : 'Gabung' }}</button>
+          </form>
+        }
+      </div>
     </div>
-  } @else {
-    <form class="card stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-      @if (error(); as msg) {
-        <div class="alert error" role="alert">{{ msg }}</div>
-      }
-      <label class="field">
-        <span>Kode undangan</span>
-        <input type="text" formControlName="code" autocomplete="off" autocapitalize="off" />
-        @if (form.controls.code.touched && form.controls.code.invalid) { <p class="err">Masukkan kode undangan.</p> }
-      </label>
-      <button class="btn primary" type="submit" [disabled]="saving()">{{ saving() ? 'Mengirim…' : 'Gabung' }}</button>
-    </form>
-  }
+  </div>
 </div>

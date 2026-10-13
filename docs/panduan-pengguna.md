@@ -23,6 +23,10 @@ cd frontend && npm start
 
 Cek backend: `curl http://localhost:8080/health` harus menjawab `{"status":"ok"}`.
 
+Tampilan memakai tema Velzon yang tidak ikut di repositori (komersial). Pasang sekali dari unduhan Velzon Anda,
+lalu jalankan ulang bila menambah ikon baru: `cd frontend && npm run theme:install -- /jalur/ke/velzon`
+(lihat [tema-velzon.md](tema-velzon.md)).
+
 ## Persiapan: siapkan beberapa akun
 
 Token login disimpan per browser, jadi satu browser hanya bisa satu akun sekaligus. Pakai **jendela

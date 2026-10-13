@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { errorMessage } from '../../core/errors';
 import { GroupService } from '../../core/groups';
+import { PageTitle } from '../../shared/page-title';
 import { RupiahPipe } from '../../shared/rupiah-pipe';
 
 /** Tanggal lokal YYYY-MM-DD untuk besok (batas awal yang diizinkan input tanggal). */
@@ -15,7 +16,7 @@ export function tomorrow(now = new Date()): string {
 
 @Component({
   selector: 'app-group-create',
-  imports: [ReactiveFormsModule, RouterLink, RupiahPipe],
+  imports: [ReactiveFormsModule, RupiahPipe, PageTitle],
   templateUrl: './group-create.html',
 })
 export class GroupCreate {

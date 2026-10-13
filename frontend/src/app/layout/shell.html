@@ -1,30 +1,144 @@
-<header class="top">
-  <div class="bar">
-    <a class="brand" routerLink="/">GeoPatungan</a>
-    <nav aria-label="Menu utama">
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Beranda</a>
-      <a routerLink="/grup" routerLinkActive="active">Grup</a>
-      <a routerLink="/dompet" routerLinkActive="active">Dompet</a>
-      <a routerLink="/referral" routerLinkActive="active">Referral</a>
-      <a routerLink="/profil" routerLinkActive="active">Profil</a>
-      @if (auth.isAdmin()) {
-        <a routerLink="/admin" routerLinkActive="active">Admin</a>
-      }
-      <a routerLink="/notifikasi" routerLinkActive="active">
-        Notifikasi
-        @if (notifications.unread() > 0) {
-          <span class="count" [attr.aria-label]="notifications.unread() + ' belum dibaca'">
-            {{ notifications.unread() > 99 ? '99+' : notifications.unread() }}
-          </span>
-        }
-      </a>
-    </nav>
-    <div class="who">
-      <span class="name">{{ auth.user()?.name }}</span>
-      <button type="button" class="btn" (click)="logout()">Keluar</button>
+<div id="layout-wrapper">
+  <header id="page-topbar">
+    <div class="layout-width">
+      <div class="navbar-header">
+        <div class="d-flex">
+          <!-- Logo (tampil di ponsel; di desktop logo ada di sidebar) -->
+          <div class="navbar-brand-box horizontal-logo">
+            <a routerLink="/" class="logo logo-dark">
+              <span class="logo-sm"><i class="ri-hand-coin-fill fs-24 text-primary"></i></span>
+              <span class="logo-lg"><span class="fs-20 fw-semibold text-body"><i class="ri-hand-coin-fill text-primary me-1"></i>GeoPatungan</span></span>
+            </a>
+            <a routerLink="/" class="logo logo-light">
+              <span class="logo-sm"><i class="ri-hand-coin-fill fs-24 text-white"></i></span>
+              <span class="logo-lg"><span class="fs-20 fw-semibold text-white"><i class="ri-hand-coin-fill me-1"></i>GeoPatungan</span></span>
+            </a>
+          </div>
+
+          <button type="button" class="btn btn-sm px-3 fs-16 header-item vertical-menu-btn topnav-hamburger" id="topnav-hamburger-icon"
+                  aria-label="Buka atau tutup menu" (click)="layout.toggleSidebar()">
+            <span class="hamburger-icon" [class.open]="layout.hamburgerOpen()"><span></span><span></span><span></span></span>
+          </button>
+        </div>
+
+        <div class="d-flex align-items-center">
+          <!-- Mode terang/gelap -->
+          <div class="ms-1 header-item d-none d-sm-flex">
+            <button type="button" class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle light-dark-mode"
+                    [attr.aria-label]="layout.theme() === 'dark' ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'" (click)="layout.toggleTheme()">
+              <i class="fs-22" [class.ri-moon-line]="layout.theme() === 'light'" [class.ri-sun-line]="layout.theme() === 'dark'"></i>
+            </button>
+          </div>
+
+          <!-- Notifikasi -->
+          <div class="ms-1 header-item">
+            <a routerLink="/notifikasi" class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle position-relative" aria-label="Notifikasi">
+              <i class="ri-notification-3-line fs-22"></i>
+              @if (notifications.unread() > 0) {
+                <span class="position-absolute topbar-badge fs-10 translate-middle badge rounded-pill bg-danger"
+                      [attr.aria-label]="notifications.unread() + ' belum dibaca'">
+                  {{ notifications.unread() > 99 ? '99+' : notifications.unread() }}
+                </span>
+              }
+            </a>
+          </div>
+
+          <!-- Pengguna -->
+          <div class="dropdown ms-sm-3 header-item topbar-user">
+            <button type="button" class="btn" id="page-header-user-dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="d-flex align-items-center">
+                <span class="avatar-xs"><span class="avatar-title rounded-circle bg-primary-subtle text-primary fs-13">{{ initials() }}</span></span>
+                <span class="text-start ms-xl-2">
+                  <span class="d-none d-xl-inline-block ms-1 fw-medium user-name-text">{{ auth.user()?.name }}</span>
+                  <span class="d-none d-xl-block ms-1 fs-12 text-muted user-name-sub">{{ auth.isAdmin() ? 'Admin' : 'Anggota' }}</span>
+                </span>
+              </span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end">
+              <h6 class="dropdown-header">Halo, {{ auth.user()?.name }}</h6>
+              <a class="dropdown-item" routerLink="/profil"><i class="ri-user-line text-muted fs-16 align-middle me-1"></i> <span class="align-middle">Profil</span></a>
+              <a class="dropdown-item" routerLink="/dompet"><i class="ri-wallet-3-line text-muted fs-16 align-middle me-1"></i> <span class="align-middle">Dompet</span></a>
+              <div class="dropdown-divider"></div>
+              <button type="button" class="dropdown-item" (click)="logout()"><i class="ri-logout-box-r-line text-muted fs-16 align-middle me-1"></i> <span class="align-middle">Keluar</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </header>
+
+  <!-- Sidebar -->
+  <div class="app-menu navbar-menu">
+    <div class="navbar-brand-box">
+      <a routerLink="/" class="logo logo-dark">
+        <span class="logo-sm"><i class="ri-hand-coin-fill fs-24 text-primary"></i></span>
+        <span class="logo-lg"><span class="fs-20 fw-semibold text-body"><i class="ri-hand-coin-fill text-primary me-1"></i>GeoPatungan</span></span>
+      </a>
+      <a routerLink="/" class="logo logo-light">
+        <span class="logo-sm"><i class="ri-hand-coin-fill fs-24 text-white"></i></span>
+        <span class="logo-lg"><span class="fs-20 fw-semibold text-white"><i class="ri-hand-coin-fill me-1"></i>GeoPatungan</span></span>
+      </a>
+      <button type="button" class="btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover" id="vertical-hover"
+              aria-label="Tahan sidebar tetap terbuka" (click)="layout.togglePin()">
+        <i class="ri-record-circle-line"></i>
+      </button>
+    </div>
+
+    <div id="scrollbar">
+      <div class="container-fluid">
+        <ul class="navbar-nav" id="navbar-nav">
+          <li class="menu-title"><span>Menu</span></li>
+          @for (m of menu; track m.path) {
+            <li class="nav-item">
+              <a class="nav-link menu-link" [routerLink]="m.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: !!m.exact }">
+                <i [class]="m.icon"></i> <span>{{ m.label }}</span>
+                @if (m.path === '/notifikasi' && notifications.unread() > 0) {
+                  <span class="badge badge-pill bg-danger">{{ notifications.unread() > 99 ? '99+' : notifications.unread() }}</span>
+                }
+              </a>
+            </li>
+          }
+
+          @if (auth.isAdmin()) {
+            <li class="menu-title"><i class="ri-more-fill"></i> <span>Admin</span></li>
+            <li class="nav-item">
+              <a class="nav-link menu-link" [class.collapsed]="!adminOpen" href="#sidebarAdmin" data-bs-toggle="collapse" role="button"
+                 [attr.aria-expanded]="adminOpen" aria-controls="sidebarAdmin">
+                <i class="ri-shield-keyhole-line"></i> <span>Administrasi</span>
+              </a>
+              <div class="collapse menu-dropdown" [class.show]="adminOpen" id="sidebarAdmin">
+                <ul class="nav nav-sm flex-column">
+                  @for (m of adminMenu; track m.path) {
+                    <li class="nav-item">
+                      <a class="nav-link" [routerLink]="m.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: !!m.exact }">{{ m.label }}</a>
+                    </li>
+                  }
+                </ul>
+              </div>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-background"></div>
   </div>
-</header>
-<main>
-  <router-outlet />
-</main>
+  <div class="vertical-overlay" (click)="layout.closeMobile()"></div>
+
+  <!-- Konten -->
+  <div class="main-content">
+    <div class="page-content">
+      <div class="container-fluid">
+        <router-outlet />
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-sm-6">&copy; {{ year }} GeoPatungan</div>
+          <div class="col-sm-6"><div class="text-sm-end d-none d-sm-block">Studi kasus arisan online · open source</div></div>
+        </div>
+      </div>
+    </footer>
+  </div>
+</div>

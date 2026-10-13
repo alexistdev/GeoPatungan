@@ -1,85 +1,164 @@
-<div class="page">
-  <h1>Halo, {{ auth.user()?.name }}</h1>
-  <p class="muted">
-    Kode referral Anda: <strong>{{ auth.user()?.referral_code }}</strong> ·
-    <a routerLink="/profil" class="badge" [class.ok]="auth.user()?.kyc_status === 'verified'">{{ kycLabel(auth.user()?.kyc_status) }}</a>
-  </p>
+<app-page-title title="Beranda" />
 
-  <div class="grid">
-    <section class="card" aria-labelledby="h-saldo">
-      <h2 id="h-saldo">Saldo</h2>
-      @if (wallet().loading) {
-        <p class="muted">Memuat…</p>
-      } @else if (wallet().error; as msg) {
-        <p class="alert error" role="alert">{{ msg }}</p>
-      } @else {
-        <p class="big money">{{ wallet().data?.balance | rupiah }}</p>
-        <div class="row">
-          <a class="btn primary" routerLink="/dompet/isi-saldo">Isi saldo</a>
-          <a class="btn" routerLink="/dompet">Riwayat</a>
+<div class="row mb-3 pb-1">
+  <div class="col-12">
+    <div class="d-flex align-items-lg-center flex-lg-row flex-column">
+      <div class="flex-grow-1">
+        <h4 class="fs-16 mb-1">Halo, {{ auth.user()?.name }}!</h4>
+        <p class="text-muted mb-0">
+          Kode referral Anda <span class="fw-semibold text-body">{{ auth.user()?.referral_code }}</span> ·
+          <a routerLink="/profil" class="badge" [class]="kycTone(auth.user()?.kyc_status)">{{ kycLabel(auth.user()?.kyc_status) }}</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-xl-4 col-md-6">
+    <div class="card card-animate">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <div class="flex-grow-1 overflow-hidden">
+            <p class="text-uppercase fw-medium text-muted text-truncate mb-0">Saldo</p>
+          </div>
         </div>
-      }
-    </section>
+        <div class="d-flex align-items-end justify-content-between mt-4">
+          <div>
+            @if (wallet().loading) {
+              <h4 class="fs-22 fw-semibold mb-4 placeholder-glow"><span class="placeholder col-8"></span></h4>
+            } @else if (wallet().error; as msg) {
+              <p class="text-danger mb-4" role="alert">{{ msg }}</p>
+            } @else {
+              <h4 class="fs-22 fw-semibold mb-4 money">{{ wallet().data?.balance | rupiah }}</h4>
+            }
+            <a routerLink="/dompet/isi-saldo" class="text-decoration-underline">Isi saldo</a>
+            <span class="text-muted mx-1">·</span>
+            <a routerLink="/dompet" class="text-decoration-underline">Riwayat</a>
+          </div>
+          <div class="avatar-sm flex-shrink-0">
+            <span class="avatar-title bg-success-subtle rounded fs-3"><i class="ri-wallet-3-line text-success"></i></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <section class="card" aria-labelledby="h-rep">
-      <h2 id="h-rep">Reputasi</h2>
-      @if (reputation().loading) {
-        <p class="muted">Memuat…</p>
-      } @else if (reputation().error; as msg) {
-        <p class="alert error" role="alert">{{ msg }}</p>
-      } @else if (reputation().data; as rep) {
-        <p>
-          <span class="badge primary">Level {{ rep.level.rank }}</span>
-          <strong> {{ rep.level.name }}</strong>
-        </p>
-        <p class="small muted">
-          Peluang kocokan ×{{ rep.level.draw_weight }} · {{ rep.stats.completed_cycles }} arisan tuntas ·
-          {{ rep.stats.late_total }} keterlambatan
-        </p>
-        @if (rep.next_level; as next) {
-          <p class="small"><strong>Menuju {{ next.level.name }}:</strong></p>
-          <ul class="list small">
-            @for (r of next.requirements; track r.key) {
-              <li>
-                <span class="badge" [class.ok]="r.met" [class.warn]="!r.met">{{ r.met ? 'Terpenuhi' : 'Belum' }}</span>
-                {{ r.label }}
+  <div class="col-xl-4 col-md-6">
+    <div class="card card-animate">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <div class="flex-grow-1 overflow-hidden">
+            <p class="text-uppercase fw-medium text-muted text-truncate mb-0">Level reputasi</p>
+          </div>
+        </div>
+        <div class="d-flex align-items-end justify-content-between mt-4">
+          <div>
+            @if (reputation().loading) {
+              <h4 class="fs-22 fw-semibold mb-4 placeholder-glow"><span class="placeholder col-8"></span></h4>
+            } @else if (reputation().error; as msg) {
+              <p class="text-danger mb-4" role="alert">{{ msg }}</p>
+            } @else if (reputation().data; as rep) {
+              <h4 class="fs-22 fw-semibold mb-4">Level {{ rep.level.rank }} · {{ rep.level.name }}</h4>
+              <span class="text-muted fs-13">Peluang kocokan ×{{ rep.level.draw_weight }}</span>
+            }
+          </div>
+          <div class="avatar-sm flex-shrink-0">
+            <span class="avatar-title bg-primary-subtle rounded fs-3"><i class="ri-medal-line text-primary"></i></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-4 col-md-6">
+    <div class="card card-animate">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <div class="flex-grow-1 overflow-hidden">
+            <p class="text-uppercase fw-medium text-muted text-truncate mb-0">Iuran menunggu</p>
+          </div>
+        </div>
+        <div class="d-flex align-items-end justify-content-between mt-4">
+          <div>
+            @if (dues().loading) {
+              <h4 class="fs-22 fw-semibold mb-4 placeholder-glow"><span class="placeholder col-8"></span></h4>
+            } @else if (dues().error) {
+              <h4 class="fs-22 fw-semibold mb-4">-</h4>
+            } @else {
+              <h4 class="fs-22 fw-semibold mb-4">{{ dues().data?.length ?? 0 }}</h4>
+            }
+            <a routerLink="/grup" class="text-decoration-underline">Lihat grup</a>
+          </div>
+          <div class="avatar-sm flex-shrink-0">
+            <span class="avatar-title bg-warning-subtle rounded fs-3"><i class="ri-time-line text-warning"></i></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-xl-7">
+    <div class="card">
+      <div class="card-header"><h5 class="card-title mb-0" id="h-iuran">Iuran yang harus dibayar</h5></div>
+      <div class="card-body">
+        @if (dues().loading) {
+          <p class="text-muted mb-0">Memuat…</p>
+        } @else if (dues().error; as msg) {
+          <div class="alert alert-danger mb-0" role="alert">{{ msg }}</div>
+        } @else if (dues().data?.length === 0) {
+          <p class="text-muted mb-0">Tidak ada iuran yang menunggu. 🎉</p>
+        } @else {
+          <ul class="list-group list-group-flush">
+            @for (c of dues().data; track c.id) {
+              <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                <div>
+                  <a [routerLink]="['/grup', c.group_id]" class="fw-medium text-body">{{ c.group_name }}</a>
+                  <div class="text-muted fs-13">Putaran {{ c.round_no }} · jatuh tempo {{ c.due_date | date: 'd MMM y' }}</div>
+                </div>
+                <div class="text-end">
+                  <div class="fw-semibold money">{{ total(c) | rupiah }}</div>
+                  @if (c.overdue) {
+                    <span class="badge bg-danger-subtle text-danger">Terlambat</span>
+                  }
+                </div>
               </li>
             }
           </ul>
-        } @else {
-          <p class="small muted">Anda sudah di level tertinggi.</p>
         }
-      }
-    </section>
+      </div>
+    </div>
   </div>
 
-  <section class="card dues" aria-labelledby="h-iuran">
-    <h2 id="h-iuran">Iuran yang harus dibayar</h2>
-    @if (dues().loading) {
-      <p class="muted">Memuat…</p>
-    } @else if (dues().error; as msg) {
-      <p class="alert error" role="alert">{{ msg }}</p>
-    } @else if (dues().data?.length === 0) {
-      <p class="muted">Tidak ada iuran yang menunggu. 🎉</p>
-    } @else {
-      <ul class="list">
-        @for (c of dues().data; track c.id) {
-          <li class="row spread">
-            <div>
-              <strong>{{ c.group_name }}</strong>
-              <div class="small muted">
-                Putaran {{ c.round_no }} · jatuh tempo {{ c.due_date | date: 'd MMM y' }}
-              </div>
-            </div>
-            <div class="right">
-              <div class="money">{{ total(c) | rupiah }}</div>
-              @if (c.overdue) {
-                <span class="badge danger">Terlambat</span>
+  <div class="col-xl-5">
+    <div class="card">
+      <div class="card-header"><h5 class="card-title mb-0" id="h-rep">Menuju level berikutnya</h5></div>
+      <div class="card-body">
+        @if (reputation().loading) {
+          <p class="text-muted mb-0">Memuat…</p>
+        } @else if (reputation().data; as rep) {
+          <p class="text-muted fs-13">
+            {{ rep.stats.completed_cycles }} arisan tuntas · {{ rep.stats.late_total }} keterlambatan
+          </p>
+          @if (rep.next_level; as next) {
+            <p class="fw-medium mb-2">Syarat {{ next.level.name }}:</p>
+            <ul class="list-unstyled mb-0">
+              @for (r of next.requirements; track r.key) {
+                <li class="d-flex align-items-center mb-2">
+                  <i class="fs-18 me-2" [class.ri-checkbox-circle-fill]="r.met" [class.text-success]="r.met"
+                     [class.ri-checkbox-blank-circle-line]="!r.met" [class.text-muted]="!r.met"></i>
+                  <span>{{ r.label }}</span>
+                  <span class="badge ms-auto" [class]="r.met ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'">{{ r.met ? 'Terpenuhi' : 'Belum' }}</span>
+                </li>
               }
-            </div>
-          </li>
+            </ul>
+          } @else {
+            <p class="text-muted mb-0">Anda sudah di level tertinggi.</p>
+          }
         }
-      </ul>
-    }
-  </section>
+      </div>
+    </div>
+  </div>
 </div>

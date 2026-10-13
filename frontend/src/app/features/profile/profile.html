@@ -1,125 +1,147 @@
-<div class="page">
-  <h1>Profil</h1>
+<app-page-title title="Profil" />
 
-  <section class="card" aria-labelledby="h-akun">
-    <h2 id="h-akun">Akun</h2>
-    <dl class="kv">
-      <dt>Nama</dt><dd>{{ auth.user()?.name }}</dd>
-      <dt>Email</dt><dd>{{ auth.user()?.email }}</dd>
-      <dt>Telepon</dt><dd>{{ auth.user()?.phone }}</dd>
-      <dt>Bergabung</dt><dd>{{ auth.user()?.created_at | date: 'd MMM y' }}</dd>
-    </dl>
-  </section>
-
-  <section class="card spaced" aria-labelledby="h-kyc">
-    <h2 id="h-kyc">Verifikasi identitas (KYC)</h2>
-    @if (kycError(); as msg) {
-      <div class="alert error" role="alert">{{ msg }}</div>
-    }
-    @if (kyc(); as k) {
-      @switch (k.kyc_status) {
-        @case ('verified') {
-          <p><span class="badge ok">Terverifikasi</span></p>
-          <p class="muted small">Akun Anda terverifikasi. Ini memenuhi syarat naik level reputasi dan membuat Anda berhak menerima komisi referral.</p>
-        }
-        @case ('pending') {
-          <p><span class="badge primary">Menunggu verifikasi</span></p>
-          <p class="muted small">Pengajuan Anda sedang diperiksa admin. Anda akan mendapat notifikasi saat ada keputusan.</p>
-        }
-        @case ('rejected') {
-          <p><span class="badge danger">Ditolak</span></p>
-          @if (k.latest_request?.review_note) {
-            <p class="alert error">Alasan: {{ k.latest_request?.review_note }}</p>
-          }
-          <p class="muted small">Anda dapat mengajukan ulang setelah memperbaiki data.</p>
-        }
-        @default {
-          <p><span class="badge">Belum terverifikasi</span></p>
-          <p class="muted small">Verifikasi dilakukan manual oleh admin. Aplikasi tidak menyimpan nomor KTP; hanya catatan singkat dan keputusan admin yang tercatat.</p>
-        }
-      }
-
-      @if (canSubmit()) {
-        @if (formOpen()) {
-          <form class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-            @if (submitError(); as msg) {
-              <div class="alert error" role="alert">{{ msg }}</div>
-            }
-            <label class="field">
-              <span>Catatan untuk admin (opsional)</span>
-              <input type="text" formControlName="note" autocomplete="off" />
-              <p class="hint">Mis. cara Anda akan mengirim bukti identitas ke admin. Jangan menulis nomor KTP di sini.</p>
-              @if (form.controls.note.invalid) { <p class="err">Maksimal 200 karakter.</p> }
-            </label>
-            <div class="row">
-              <button class="btn primary" type="submit" [disabled]="submitting()">{{ submitting() ? 'Mengirim…' : 'Ajukan verifikasi' }}</button>
-              <button class="btn" type="button" (click)="formOpen.set(false)" [disabled]="submitting()">Batal</button>
-            </div>
-          </form>
-        } @else {
-          <button class="btn primary" type="button" (click)="formOpen.set(true)">
-            {{ k.kyc_status === 'rejected' ? 'Ajukan ulang' : 'Ajukan verifikasi' }}
-          </button>
-        }
-      }
-    } @else if (!kycError()) {
-      <p class="muted">Memuat…</p>
-    }
-  </section>
-
-  <section class="card spaced" aria-labelledby="h-rep">
-    <h2 id="h-rep">Reputasi</h2>
-    @if (repError(); as msg) {
-      <div class="alert error" role="alert">{{ msg }}</div>
-    }
-    @if (reputation(); as rep) {
-      <p>
-        <span class="badge primary">Level {{ rep.level.rank }}</span>
-        <strong> {{ rep.level.name }}</strong>
-      </p>
-
-      <h3>Hak Anda</h3>
-      <ul class="list small">
-        <li>Peluang kocokan berbobot: <strong>×{{ rep.level.draw_weight }}</strong></li>
-        <li>Membuat grup: <strong>{{ rep.level.can_create_group ? 'Boleh' : 'Belum boleh' }}</strong></li>
-        <li>Nilai grup maksimal: <strong>{{ rep.level.max_group_value === null ? 'Tanpa batas' : (rep.level.max_group_value | rupiah) }}</strong></li>
-      </ul>
-
-      <h3>Catatan Anda</h3>
-      <div class="stats">
-        <div><div class="big">{{ rep.stats.completed_cycles }}</div><div class="small muted">Arisan tuntas</div></div>
-        <div><div class="big">{{ rep.stats.on_time_payments }}</div><div class="small muted">Bayar tepat waktu</div></div>
-        <div><div class="big">{{ rep.stats.late_total }}</div><div class="small muted">Keterlambatan</div></div>
-        <div><div class="big">{{ rep.stats.overdue_unpaid }}</div><div class="small muted">Menunggak kini</div></div>
+<div class="row">
+  <div class="col-xl-4">
+    <div class="card" aria-labelledby="h-akun">
+      <div class="card-header"><h5 class="card-title mb-0" id="h-akun">Akun</h5></div>
+      <div class="card-body">
+        <div class="text-center mb-4">
+          <div class="avatar-lg mx-auto mb-3">
+            <span class="avatar-title rounded-circle bg-primary-subtle text-primary fs-1">{{ auth.user()?.name?.charAt(0)?.toUpperCase() }}</span>
+          </div>
+          <h5 class="mb-0">{{ auth.user()?.name }}</h5>
+          <p class="text-muted mb-0">{{ auth.isAdmin() ? 'Admin' : 'Anggota' }}</p>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-borderless mb-0">
+            <tbody>
+              <tr><th class="ps-0" scope="row">Email</th><td class="text-muted">{{ auth.user()?.email }}</td></tr>
+              <tr><th class="ps-0" scope="row">Telepon</th><td class="text-muted">{{ auth.user()?.phone }}</td></tr>
+              <tr><th class="ps-0" scope="row">Bergabung</th><td class="text-muted">{{ auth.user()?.created_at | date: 'd MMM y' }}</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
+    </div>
 
-      @if (rep.next_level; as next) {
-        <h3>Menuju level {{ next.level.rank }}: {{ next.level.name }}</h3>
-        <ul class="list">
-          @for (r of next.requirements; track r.key) {
-            <li>
-              <div class="row spread">
-                <span>{{ r.label }}</span>
-                <span class="badge" [class.ok]="r.met" [class.warn]="!r.met">{{ r.met ? 'Terpenuhi' : 'Belum' }}</span>
-              </div>
-              @if (r.key !== 'late') {
-                <progress [value]="percent(r)" max="100" [attr.aria-label]="r.label"></progress>
-                <div class="small muted">{{ r.current }} dari {{ r.required }}</div>
-              } @else {
-                <div class="small muted">Keterlambatan Anda {{ r.current }} (batas {{ r.required }})</div>
+    <div class="card" aria-labelledby="h-kyc">
+      <div class="card-header"><h5 class="card-title mb-0" id="h-kyc">Verifikasi identitas (KYC)</h5></div>
+      <div class="card-body">
+        @if (kycError(); as msg) {
+          <div class="alert alert-danger" role="alert">{{ msg }}</div>
+        }
+        @if (kyc(); as k) {
+          @switch (k.kyc_status) {
+            @case ('verified') {
+              <p><span class="badge bg-success-subtle text-success">Terverifikasi</span></p>
+              <p class="text-muted fs-13">Akun Anda terverifikasi. Ini memenuhi syarat naik level reputasi dan membuat Anda berhak menerima komisi referral.</p>
+            }
+            @case ('pending') {
+              <p><span class="badge bg-primary-subtle text-primary">Menunggu verifikasi</span></p>
+              <p class="text-muted fs-13">Pengajuan Anda sedang diperiksa admin. Anda akan mendapat notifikasi saat ada keputusan.</p>
+            }
+            @case ('rejected') {
+              <p><span class="badge bg-danger-subtle text-danger">Ditolak</span></p>
+              @if (k.latest_request?.review_note) {
+                <div class="alert alert-danger">Alasan: {{ k.latest_request?.review_note }}</div>
               }
-            </li>
+              <p class="text-muted fs-13">Anda dapat mengajukan ulang setelah memperbaiki data.</p>
+            }
+            @default {
+              <p><span class="badge bg-secondary-subtle text-secondary">Belum terverifikasi</span></p>
+              <p class="text-muted fs-13">Verifikasi dilakukan manual oleh admin. Aplikasi tidak menyimpan nomor KTP; hanya catatan singkat dan keputusan admin yang tercatat.</p>
+            }
           }
-        </ul>
-        <p class="small muted">
-          Hak level berikutnya: peluang kocokan ×{{ next.level.draw_weight }}, nilai grup maksimal
-          {{ next.level.max_group_value === null ? 'tanpa batas' : (next.level.max_group_value | rupiah) }}.
-        </p>
-      } @else {
-        <p class="alert info">Anda sudah di level tertinggi. 🎉</p>
-      }
-    } @else if (!repError()) {
-      <p class="muted">Memuat…</p>
-    }
-  </section>
+
+          @if (canSubmit()) {
+            @if (formOpen()) {
+              <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+                @if (submitError(); as msg) {
+                  <div class="alert alert-danger" role="alert">{{ msg }}</div>
+                }
+                <div class="mb-3">
+                  <label class="form-label" for="note">Catatan untuk admin (opsional)</label>
+                  <input type="text" class="form-control" id="note" formControlName="note" autocomplete="off" [class.is-invalid]="form.controls.note.invalid" />
+                  <div class="form-text">Mis. cara Anda akan mengirim bukti identitas ke admin. Jangan menulis nomor KTP di sini.</div>
+                  @if (form.controls.note.invalid) { <div class="invalid-feedback">Maksimal 200 karakter.</div> }
+                </div>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-primary" type="submit" [disabled]="submitting()">{{ submitting() ? 'Mengirim…' : 'Ajukan verifikasi' }}</button>
+                  <button class="btn btn-light" type="button" (click)="formOpen.set(false)" [disabled]="submitting()">Batal</button>
+                </div>
+              </form>
+            } @else {
+              <button class="btn btn-primary" type="button" (click)="formOpen.set(true)">
+                {{ k.kyc_status === 'rejected' ? 'Ajukan ulang' : 'Ajukan verifikasi' }}
+              </button>
+            }
+          }
+        } @else if (!kycError()) {
+          <p class="text-muted mb-0">Memuat…</p>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-8">
+    <div class="card" aria-labelledby="h-rep">
+      <div class="card-header"><h5 class="card-title mb-0" id="h-rep">Reputasi</h5></div>
+      <div class="card-body">
+        @if (repError(); as msg) {
+          <div class="alert alert-danger" role="alert">{{ msg }}</div>
+        }
+        @if (reputation(); as rep) {
+          <p>
+            <span class="badge bg-primary-subtle text-primary">Level {{ rep.level.rank }}</span>
+            <strong class="ms-1">{{ rep.level.name }}</strong>
+          </p>
+
+          <h6 class="mt-4">Hak Anda</h6>
+          <ul class="list-group list-group-flush fs-13 mb-4">
+            <li class="list-group-item px-0">Peluang kocokan berbobot: <strong>×{{ rep.level.draw_weight }}</strong></li>
+            <li class="list-group-item px-0">Membuat grup: <strong>{{ rep.level.can_create_group ? 'Boleh' : 'Belum boleh' }}</strong></li>
+            <li class="list-group-item px-0">Nilai grup maksimal: <strong>{{ rep.level.max_group_value === null ? 'Tanpa batas' : (rep.level.max_group_value | rupiah) }}</strong></li>
+          </ul>
+
+          <h6>Catatan Anda</h6>
+          <div class="row stats mb-4">
+            <div class="col-6 col-md-3"><div class="fs-22 fw-semibold big">{{ rep.stats.completed_cycles }}</div><div class="fs-13 text-muted">Arisan tuntas</div></div>
+            <div class="col-6 col-md-3"><div class="fs-22 fw-semibold big">{{ rep.stats.on_time_payments }}</div><div class="fs-13 text-muted">Bayar tepat waktu</div></div>
+            <div class="col-6 col-md-3"><div class="fs-22 fw-semibold big">{{ rep.stats.late_total }}</div><div class="fs-13 text-muted">Keterlambatan</div></div>
+            <div class="col-6 col-md-3"><div class="fs-22 fw-semibold big">{{ rep.stats.overdue_unpaid }}</div><div class="fs-13 text-muted">Menunggak kini</div></div>
+          </div>
+
+          @if (rep.next_level; as next) {
+            <h6>Menuju level {{ next.level.rank }}: {{ next.level.name }}</h6>
+            <ul class="list-group list-group-flush">
+              @for (r of next.requirements; track r.key) {
+                <li class="list-group-item px-0">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span>{{ r.label }}</span>
+                    <span class="badge" [class]="r.met ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'">{{ r.met ? 'Terpenuhi' : 'Belum' }}</span>
+                  </div>
+                  @if (r.key !== 'late') {
+                    <div class="progress progress-sm mt-2" role="progressbar" [attr.aria-label]="r.label" [attr.aria-valuenow]="percent(r)" aria-valuemin="0" aria-valuemax="100">
+                      <div class="progress-bar bg-success" [style.width.%]="percent(r)" [attr.data-percent]="percent(r)"></div>
+                    </div>
+                    <div class="fs-12 text-muted mt-1">{{ r.current }} dari {{ r.required }}</div>
+                  } @else {
+                    <div class="fs-12 text-muted mt-1">Keterlambatan Anda {{ r.current }} (batas {{ r.required }})</div>
+                  }
+                </li>
+              }
+            </ul>
+            <p class="fs-13 text-muted mt-3 mb-0">
+              Hak level berikutnya: peluang kocokan ×{{ next.level.draw_weight }}, nilai grup maksimal
+              {{ next.level.max_group_value === null ? 'tanpa batas' : (next.level.max_group_value | rupiah) }}.
+            </p>
+          } @else {
+            <div class="alert alert-info mb-0">Anda sudah di level tertinggi. 🎉</div>
+          }
+        } @else if (!repError()) {
+          <p class="text-muted mb-0">Memuat…</p>
+        }
+      </div>
+    </div>
+  </div>
 </div>

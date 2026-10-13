@@ -6,6 +6,8 @@ import { AuthService } from '../../core/auth';
 import { errorMessage } from '../../core/errors';
 import { MeService } from '../../core/me';
 import { MyContribution, ReputationProfile, Wallet } from '../../core/models';
+import { PageTitle } from '../../shared/page-title';
+import { TONE } from '../../shared/labels';
 import { RupiahPipe } from '../../shared/rupiah-pipe';
 
 /** Bagian halaman yang dimuat sendiri-sendiri: satu gagal tidak menghapus yang lain. */
@@ -21,9 +23,8 @@ function pending<T>(): Section<T> {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [RupiahPipe, DatePipe, RouterLink],
+  imports: [RupiahPipe, DatePipe, RouterLink, PageTitle],
   templateUrl: './dashboard.html',
-  styleUrl: './dashboard.scss',
 })
 export class Dashboard implements OnInit {
   protected readonly auth = inject(AuthService);
@@ -50,6 +51,10 @@ export class Dashboard implements OnInit {
 
   protected total(c: MyContribution): number {
     return c.amount + c.platform_fee + c.late_fee;
+  }
+
+  protected kycTone(status: string | undefined): string {
+    return status === 'verified' ? TONE.ok : status === 'pending' ? TONE.primary : status === 'rejected' ? TONE.danger : TONE.neutral;
   }
 
   protected kycLabel(status: string | undefined): string {
