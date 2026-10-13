@@ -37,6 +37,8 @@ describe('Dashboard', () => {
     const el = render('member', [group({}), group({ id: 'g2', name: 'Menunggu', my_status: 'pending' })]);
     expect(el.querySelector('[data-testid=hero]')?.textContent).toContain('Halo, Budi!');
     expect(el.textContent).toContain('Rp125.000');
+    expect(el.textContent).toContain('Level 1 · Pemula');
+    expect(el.textContent).not.toContain('Peluang kocokan');
     expect(el.querySelector('[data-testid=active-groups]')?.textContent?.trim()).toBe('1');
     const cards = el.querySelectorAll('[data-testid=group-card]');
     expect(cards.length).toBe(1);
