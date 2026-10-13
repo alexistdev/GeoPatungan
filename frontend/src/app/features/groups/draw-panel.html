@@ -1,0 +1,82 @@
+<section class="card" aria-labelledby="h-kocokan">
+  <h2 id="h-kocokan">Urutan penerima</h2>
+  <p class="small muted">Cara: {{ methodText[group().draw_method] }}</p>
+
+  @if (error(); as msg) {
+    <div class="alert error" role="alert">{{ msg }}</div>
+  }
+
+  @if (loading()) {
+    <p class="muted">Memuat…</p>
+  } @else if (executed()) {
+    @if (draw(); as d) {
+      <ol class="list results">
+        @for (e of results(); track e.member_id) {
+          <li class="row spread">
+            <span><strong>{{ e.turn_order }}.</strong> {{ e.user_name }}</span>
+            @if (d.algorithm !== 'manual') {
+              <span class="small muted">bobot {{ e.weight }}</span>
+            }
+          </li>
+        }
+      </ol>
+      @if (d.algorithm !== 'manual') {
+        <details class="verify">
+          <summary>Verifikasi kocokan</summary>
+          <p class="small muted">
+            Hasil dapat diperiksa siapa pun: <em>commit</em> (hash) dikunci sebelum kocokan, lalu <em>seed</em> dibuka.
+            Hash seed harus sama dengan commit, dan urutan dihitung ulang dari seed + bobot.
+          </p>
+          <p class="small">Commit: <code class="mono">{{ d.seed_commit }}</code></p>
+          <p class="small">Seed: <code class="mono">{{ d.seed_reveal }}</code></p>
+          <p class="small">Algoritma: <code class="mono">{{ d.algorithm }}</code> · dijalankan {{ d.executed_at | date: 'd MMM y, HH:mm' }}</p>
+        </details>
+      }
+    }
+  } @else if (group().draw_method === 'manual') {
+    @if (isOwner() && group().status === 'open') {
+      @if (!full()) {
+        <p class="alert warn">Grup harus penuh ({{ activeMembers().length }}/{{ group().slot_count }}) sebelum urutan ditetapkan.</p>
+      } @else {
+        <p class="small">Susun urutan penerima, lalu tetapkan. Setelah ditetapkan grup langsung berjalan dan tidak bisa diubah.</p>
+        <ol class="list">
+          @for (id of manualOrder(); track id; let i = $index; let last = $last) {
+            <li class="row spread">
+              <span><strong>{{ i + 1 }}.</strong> {{ nameOf(id) }}</span>
+              <span class="row">
+                <button class="btn" type="button" (click)="move(i, -1)" [disabled]="i === 0 || busy()" [attr.aria-label]="'Naikkan ' + nameOf(id)">↑</button>
+                <button class="btn" type="button" (click)="move(i, 1)" [disabled]="last || busy()" [attr.aria-label]="'Turunkan ' + nameOf(id)">↓</button>
+              </span>
+            </li>
+          }
+        </ol>
+        <button class="btn primary" type="button" (click)="saveManual()" [disabled]="busy()">
+          {{ busy() ? 'Menyimpan…' : 'Tetapkan urutan dan mulai grup' }}
+        </button>
+      }
+    } @else {
+      <p class="muted">Pemilik grup akan menetapkan urutan setelah grup penuh.</p>
+    }
+  } @else if (draw(); as d) {
+    <div class="alert info">
+      <strong>Kocokan sudah dikunci.</strong>
+      <p class="small">Commit: <code class="mono">{{ d.seed_commit }}</code></p>
+      <p class="small muted">Dikunci {{ d.committed_at | date: 'd MMM y, HH:mm' }}. Hasil tidak bisa dipilih-pilih karena seed baru dibuka saat kocokan dijalankan.</p>
+    </div>
+    @if (isOwner() && group().status === 'open') {
+      <button class="btn primary" type="button" (click)="execute()" [disabled]="busy()">{{ busy() ? 'Mengocok…' : 'Jalankan kocokan' }}</button>
+    }
+  } @else if (isOwner() && group().status === 'open') {
+    @if (!full()) {
+      <p class="alert warn">Grup harus penuh ({{ activeMembers().length }}/{{ group().slot_count }}) sebelum kocokan dikunci.</p>
+    } @else {
+      <p class="small">
+        Langkah 1: kunci kocokan (hash seed dipublikasikan lebih dulu agar hasil tidak bisa dimanipulasi).
+        Langkah 2: jalankan kocokan.
+      </p>
+      <button class="btn primary" type="button" (click)="commit()" [disabled]="busy()">{{ busy() ? 'Mengunci…' : 'Kunci kocokan' }}</button>
+    }
+  } @else {
+    <p class="muted">Kocokan akan dilakukan pemilik grup setelah grup penuh.</p>
+  }
+</section>

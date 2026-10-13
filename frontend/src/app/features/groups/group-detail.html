@@ -1,0 +1,49 @@
+<div class="page">
+  <a class="back" routerLink="/grup">← Grup</a>
+
+  @if (loading()) {
+    <p class="muted">Memuat…</p>
+  } @else if (error(); as msg) {
+    <div class="alert error" role="alert">{{ msg }}</div>
+  } @else if (group(); as g) {
+    <div class="row spread">
+      <h1>{{ g.name }}</h1>
+      <span class="badge" [class]="label(g.status).tone">{{ label(g.status).text }}</span>
+    </div>
+
+    @if (g.my_status === 'pending') {
+      <div class="alert warn">Permintaan bergabung Anda menunggu persetujuan pemilik grup.</div>
+    }
+
+    <section class="card">
+      <dl class="kv">
+        <dt>Iuran</dt><dd>{{ g.contribution_amount | rupiah }} ({{ period[g.period_type].toLowerCase() }})</dd>
+        <dt>Anggota</dt><dd>{{ g.active_members }} dari {{ g.slot_count }}</dd>
+        <dt>Dana per putaran</dt><dd>{{ g.contribution_amount * g.slot_count | rupiah }}</dd>
+        <dt>Mulai</dt><dd>{{ g.start_date }}</dd>
+        <dt>Denda terlambat</dt><dd>{{ g.late_fee | rupiah }}</dd>
+        <dt>Urutan penerima</dt><dd>{{ method[g.draw_method] }}</dd>
+        <dt>Level minimal</dt><dd>{{ g.min_level_rank }}</dd>
+      </dl>
+      @if (isOwner() && g.invite_code) {
+        <div class="invite">
+          <div class="small muted">Kode undangan (bagikan ke calon anggota)</div>
+          <div class="row">
+            <code class="mono code">{{ g.invite_code }}</code>
+            <button class="btn" type="button" (click)="copy(inviteLink(g))">{{ copied() ? 'Tersalin ✓' : 'Salin tautan' }}</button>
+          </div>
+        </div>
+      }
+    </section>
+
+    <div class="stack spaced">
+      @if (isActiveMember()) {
+        <app-members-panel [group]="g" [members]="members()" [isOwner]="isOwner()" (changed)="load()" />
+        <app-draw-panel [group]="g" [members]="members()" [isOwner]="isOwner()" (changed)="load()" />
+        @if (g.status !== 'open') {
+          <app-rounds-panel [group]="g" (changed)="load()" />
+        }
+      }
+    </div>
+  }
+</div>

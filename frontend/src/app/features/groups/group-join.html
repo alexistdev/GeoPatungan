@@ -1,0 +1,24 @@
+<div class="page narrow">
+  <a class="back" routerLink="/grup">← Grup</a>
+  <h1>Gabung ke grup</h1>
+
+  @if (joined(); as name) {
+    <div class="card stack">
+      <div class="alert info" role="status">Permintaan bergabung ke <strong>{{ name }}</strong> terkirim.</div>
+      <p class="muted small">Pemilik grup akan menyetujui permintaan Anda. Anda akan mendapat notifikasi.</p>
+      <button class="btn primary" type="button" (click)="toList()">Lihat grup saya</button>
+    </div>
+  } @else {
+    <form class="card stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (error(); as msg) {
+        <div class="alert error" role="alert">{{ msg }}</div>
+      }
+      <label class="field">
+        <span>Kode undangan</span>
+        <input type="text" formControlName="code" autocomplete="off" autocapitalize="off" />
+        @if (form.controls.code.touched && form.controls.code.invalid) { <p class="err">Masukkan kode undangan.</p> }
+      </label>
+      <button class="btn primary" type="submit" [disabled]="saving()">{{ saving() ? 'Mengirim…' : 'Gabung' }}</button>
+    </form>
+  }
+</div>

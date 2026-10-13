@@ -1,0 +1,117 @@
+<section class="card" aria-labelledby="h-putaran">
+  <h2 id="h-putaran">Jadwal putaran</h2>
+
+  @if (error(); as msg) {
+    <div class="alert error" role="alert">{{ msg }}</div>
+  }
+
+  @if (quoteError(); as msg) {
+    <div class="alert error" role="alert">{{ msg }}</div>
+  }
+
+  @if (receipt(); as r) {
+    <div class="alert info" role="status">
+      Pembayaran {{ rupiah(r.receipt.total) }} berhasil{{ r.receipt.paid_on_time ? '' : ' (terlambat)' }}. Saldo Anda kini {{ rupiah(r.balance) }}.
+      @if (r.round.payout; as p) {
+        <br />Putaran lengkap: <strong>{{ rupiah(p.amount) }}</strong> dicairkan ke {{ p.recipient_name }}.
+      }
+      @if (r.round.group_done) {
+        <br /><strong>Seluruh putaran selesai, grup ditutup.</strong>
+      }
+    </div>
+  }
+
+  @if (loading()) {
+    <p class="muted">Memuat…</p>
+  } @else {
+    <ul class="list">
+      @for (r of rounds(); track r.id) {
+        <li>
+          <div class="row spread">
+            <div>
+              <strong>Putaran {{ r.round_no }}</strong>
+              <span class="small muted"> · jatuh tempo {{ r.due_date | date: 'd MMM y' }}</span>
+              <div class="small">Penerima: <strong>{{ r.recipient_name }}</strong> · dana {{ r.pot_amount | rupiah }}</div>
+            </div>
+            <span class="badge" [class]="label(r.status).tone">{{ label(r.status).text }}</span>
+          </div>
+          <div class="small muted">{{ r.paid_count }} dari {{ r.member_count }} sudah membayar</div>
+          <progress [value]="r.paid_count" [max]="r.member_count" [attr.aria-label]="'Pembayaran putaran ' + r.round_no"></progress>
+
+          <div class="row">
+            @if (myContribution(r); as c) {
+              @if (c.status === 'paid') {
+                <span class="badge ok">Anda sudah bayar</span>
+              } @else if (r.status === 'collecting') {
+                <button class="btn primary" type="button" (click)="startPay(c)" [disabled]="quoting() !== null || paying()">
+                  {{ quoting() === c.id ? 'Memeriksa…' : 'Bayar iuran' }}
+                </button>
+                @if (c.overdue) { <span class="badge danger">Terlambat</span> }
+              } @else if (r.status === 'upcoming') {
+                <span class="small muted">Belum dibuka</span>
+              }
+            }
+            <button class="btn" type="button" (click)="toggle(r)" [attr.aria-expanded]="expanded() === r.id">
+              {{ expanded() === r.id ? 'Sembunyikan pembayar' : 'Lihat pembayar' }}
+            </button>
+          </div>
+
+          @if (quote(); as q) {
+            @if (myContribution(r)?.id === q.contribution_id) {
+              <div class="pay card">
+                <h3>Rincian pembayaran</h3>
+                <dl class="kv">
+                  <dt>Iuran</dt><dd>{{ q.amount | rupiah }}</dd>
+                  <dt>Biaya platform</dt><dd>{{ q.platform_fee | rupiah }}</dd>
+                  @if (q.late_fee > 0) { <dt>Denda terlambat</dt><dd>{{ q.late_fee | rupiah }}</dd> }
+                  <dt>Total</dt><dd class="money">{{ q.total | rupiah }}</dd>
+                  <dt>Saldo Anda</dt><dd>{{ q.balance | rupiah }}</dd>
+                </dl>
+                @if (!q.payable) {
+                  <p class="alert warn">{{ q.reason || 'Iuran ini belum bisa dibayar.' }}</p>
+                } @else if (!q.sufficient) {
+                  <p class="alert warn">Saldo kurang {{ q.total - q.balance | rupiah }}. <a routerLink="/dompet/isi-saldo">Isi saldo</a> dulu.</p>
+                }
+                @if (short(); as s) {
+                  <p class="alert error" role="alert">Saldo tidak cukup: dibutuhkan {{ s.required | rupiah }}, saldo Anda {{ s.balance | rupiah }}.</p>
+                }
+                @if (payError(); as msg) {
+                  <p class="alert error" role="alert">{{ msg }}</p>
+                }
+                <div class="row">
+                  <button class="btn primary" type="button" (click)="confirmPay()" [disabled]="paying() || !q.payable || !q.sufficient">
+                    {{ paying() ? 'Membayar…' : 'Bayar ' + rupiah(q.total) }}
+                  </button>
+                  <button class="btn" type="button" (click)="cancelPay()" [disabled]="paying()">Batal</button>
+                </div>
+              </div>
+            }
+          }
+
+          @if (expanded() === r.id) {
+            @if (detailError(); as msg) {
+              <p class="alert error" role="alert">{{ msg }}</p>
+            } @else if (detail(); as list) {
+              <ul class="list small payers">
+                @for (c of list; track c.id) {
+                  <li class="row spread">
+                    <span>{{ c.user_name }}</span>
+                    @if (c.status === 'paid') {
+                      <span class="badge" [class.ok]="c.paid_on_time" [class.warn]="!c.paid_on_time">{{ c.paid_on_time ? 'Lunas' : 'Lunas (terlambat)' }}</span>
+                    } @else if (c.overdue) {
+                      <span class="badge danger">Menunggak</span>
+                    } @else {
+                      <span class="badge">Belum</span>
+                    }
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="muted small">Memuat…</p>
+            }
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

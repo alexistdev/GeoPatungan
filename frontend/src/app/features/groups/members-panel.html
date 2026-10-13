@@ -1,0 +1,41 @@
+<section class="card" aria-labelledby="h-anggota">
+  <h2 id="h-anggota">Anggota ({{ active().length }}/{{ group().slot_count }})</h2>
+
+  @if (error(); as msg) {
+    <div class="alert error" role="alert">{{ msg }}</div>
+  }
+
+  @if (isOwner() && pending().length > 0) {
+    <div class="alert warn">
+      <strong>{{ pending().length }} permintaan bergabung</strong>
+      <ul class="list">
+        @for (m of pending(); track m.id) {
+          <li class="row spread">
+            <span>{{ m.user_name }} <span class="small muted">· {{ m.joined_at | date: 'd MMM y' }}</span></span>
+            <span class="row">
+              <button class="btn primary" type="button" (click)="act(m, 'approve')" [disabled]="busy() !== null || group().status !== 'open' || active().length >= group().slot_count">Terima</button>
+              <button class="btn danger" type="button" (click)="act(m, 'reject')" [disabled]="busy() !== null">Tolak</button>
+            </span>
+          </li>
+        }
+      </ul>
+      @if (active().length >= group().slot_count) {
+        <p class="small">Slot sudah penuh; permintaan lain tidak dapat diterima.</p>
+      }
+    </div>
+  }
+
+  <ul class="list">
+    @for (m of active(); track m.id) {
+      <li class="row spread">
+        <span>
+          {{ m.user_name }}
+          @if (m.user_id === group().owner_id) { <span class="badge primary">Pemilik</span> }
+        </span>
+        @if (m.turn_order !== null) { <span class="badge">Giliran {{ m.turn_order }}</span> }
+      </li>
+    } @empty {
+      <li class="muted">Belum ada anggota aktif.</li>
+    }
+  </ul>
+</section>

@@ -202,3 +202,117 @@ export interface ReconcileReport {
   wallets_checked: number;
   entries_checked: number;
 }
+
+export type GroupStatus = 'open' | 'running' | 'done';
+export type DrawMethod = 'random' | 'weighted' | 'manual';
+
+export interface Group {
+  id: string;
+  owner_id: string;
+  name: string;
+  contribution_amount: number;
+  period_type: 'weekly' | 'monthly';
+  slot_count: number;
+  start_date: string;
+  late_fee: number;
+  draw_method: DrawMethod;
+  min_level_rank: number;
+  status: GroupStatus;
+  invite_code?: string;
+  created_at: string;
+  active_members: number;
+  my_status?: 'pending' | 'active' | 'removed';
+}
+
+export interface GroupInput {
+  name: string;
+  contribution_amount: number;
+  period_type: string;
+  slot_count: number;
+  start_date: string;
+  late_fee: number;
+  draw_method: string;
+  min_level_rank: number;
+}
+
+export interface Member {
+  id: string;
+  group_id: string;
+  user_id: string;
+  user_name: string;
+  turn_order: number | null;
+  status: 'pending' | 'active' | 'removed';
+  joined_at: string;
+}
+
+export interface Round {
+  id: string;
+  group_id: string;
+  round_no: number;
+  due_date: string;
+  recipient_member_id: string;
+  recipient_name: string;
+  status: 'upcoming' | 'collecting' | 'paid_out';
+  paid_count: number;
+  member_count: number;
+  pot_amount: number;
+}
+
+export interface RoundContribution {
+  id: string;
+  round_id: string;
+  round_no: number;
+  due_date: string;
+  member_id: string;
+  user_name: string;
+  amount: number;
+  platform_fee: number;
+  late_fee: number;
+  status: 'unpaid' | 'paid';
+  paid_on_time: boolean | null;
+  paid_at: string | null;
+  overdue: boolean;
+}
+
+export interface Quote {
+  contribution_id: string;
+  group_id: string;
+  round_id: string;
+  due_date: string;
+  status: 'unpaid' | 'paid';
+  round_status: string;
+  amount: number;
+  platform_fee: number;
+  late_fee: number;
+  total: number;
+  late: boolean;
+  payable: boolean;
+  reason?: string;
+  balance: number;
+  sufficient: boolean;
+}
+
+export interface PayResult {
+  receipt: { contribution_id: string; total: number; paid_on_time: boolean };
+  balance: number;
+  round: { completed: boolean; group_done: boolean; payout: { recipient_name: string; amount: number } | null };
+}
+
+export interface DrawEntry {
+  member_id: string;
+  user_name: string;
+  weight: number;
+  score?: number;
+  turn_order: number | null;
+}
+
+export interface Draw {
+  id: string;
+  group_id: string;
+  algorithm: string;
+  seed_commit?: string;
+  seed_reveal?: string;
+  committed_at: string;
+  executed_at: string | null;
+  entries: DrawEntry[];
+}

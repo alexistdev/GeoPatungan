@@ -1,0 +1,72 @@
+<div class="page narrow">
+  <a class="back" routerLink="/grup">← Grup</a>
+  <h1>Buat grup arisan</h1>
+
+  <form class="card stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (error(); as msg) {
+      <div class="alert error" role="alert">{{ msg }}</div>
+    }
+
+    <label class="field">
+      <span>Nama grup</span>
+      <input type="text" formControlName="name" autocomplete="off" />
+      @if (invalid('name')) { <p class="err">3 sampai 100 karakter.</p> }
+    </label>
+
+    <div class="grid">
+      <label class="field">
+        <span>Iuran per anggota (Rp)</span>
+        <input type="number" formControlName="contribution_amount" inputmode="numeric" />
+        @if (invalid('contribution_amount')) { <p class="err">Rp10.000 sampai Rp100.000.000.</p> }
+      </label>
+      <label class="field">
+        <span>Jumlah anggota (slot)</span>
+        <input type="number" formControlName="slot_count" inputmode="numeric" />
+        @if (invalid('slot_count')) { <p class="err">2 sampai 50.</p> }
+      </label>
+    </div>
+    <p class="small muted">Dana yang diterima penerima tiap putaran: <strong class="money">{{ pot() | rupiah }}</strong>. Jumlah putaran = jumlah anggota.</p>
+
+    <div class="grid">
+      <label class="field">
+        <span>Periode</span>
+        <select formControlName="period_type">
+          <option value="monthly">Bulanan</option>
+          <option value="weekly">Mingguan</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Tanggal mulai</span>
+        <input type="date" formControlName="start_date" [min]="minDate" />
+        @if (invalid('start_date') || form.controls.start_date.value < minDate) { <p class="err">Paling cepat besok.</p> }
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Denda keterlambatan (Rp)</span>
+      <input type="number" formControlName="late_fee" inputmode="numeric" />
+      <p class="hint">0 sampai sebesar iuran.</p>
+      @if (invalid('late_fee') || lateFeeTooHigh()) { <p class="err">Denda tidak boleh melebihi iuran.</p> }
+    </label>
+
+    <label class="field">
+      <span>Cara menentukan urutan penerima</span>
+      <select formControlName="draw_method">
+        <option value="random">Acak (adil, bisa diverifikasi)</option>
+        <option value="weighted">Berbobot reputasi (reputasi baik berpeluang lebih besar)</option>
+        <option value="manual">Ditentukan pemilik grup</option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Level reputasi minimal untuk bergabung</span>
+      <select formControlName="min_level_rank">
+        <option [ngValue]="1">Level 1 (semua orang)</option>
+        <option [ngValue]="2">Level 2 (Terpercaya)</option>
+        <option [ngValue]="3">Level 3 (Senior)</option>
+      </select>
+    </label>
+
+    <button class="btn primary" type="submit" [disabled]="saving()">{{ saving() ? 'Membuat…' : 'Buat grup' }}</button>
+  </form>
+</div>
