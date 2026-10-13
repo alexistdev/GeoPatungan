@@ -1,0 +1,80 @@
+<div class="page">
+  <h1>Referral</h1>
+  <p class="muted">
+    Ajak orang bergabung. Setiap kali mereka (sampai 4 tingkat ke bawah) membayar iuran, Anda mendapat komisi dari
+    <strong>biaya platform</strong>, bukan dari dana arisan anggota.
+  </p>
+
+  @if (error(); as msg) {
+    <div class="alert error" role="alert">{{ msg }}</div>
+  }
+
+  @if (summary(); as s) {
+    @if (!s.eligible) {
+      <div class="alert warn">
+        Komisi hanya dibayarkan ke akun yang <strong>sudah terverifikasi</strong>. Selama belum, bagian Anda tetap di platform.
+        <a routerLink="/profil">Verifikasi akun</a>
+      </div>
+    }
+
+    <section class="card" aria-labelledby="h-kode">
+      <h2 id="h-kode">Kode dan tautan Anda</h2>
+      <p><code class="mono code">{{ s.referral_code }}</code></p>
+      <div class="row">
+        <input class="link" type="text" readonly [value]="link()" aria-label="Tautan pendaftaran" (focus)="$any($event.target).select()" />
+        <button class="btn primary" type="button" (click)="copy()">{{ copied() ? 'Tersalin ✓' : 'Salin tautan' }}</button>
+      </div>
+    </section>
+
+    <section class="card spaced" aria-labelledby="h-level">
+      <h2 id="h-level">Pembagian komisi per level</h2>
+      <p class="small muted">Total semua level {{ totalPercent() }}% dari biaya platform per iuran.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Level</th><th class="num">Bagian</th><th class="num">Downline</th><th class="num">Komisi Anda</th></tr>
+          </thead>
+          <tbody>
+            @for (r of s.rules; track r.level) {
+              <tr>
+                <td>{{ r.level === 1 ? 'Level 1 (langsung)' : 'Level ' + r.level }}</td>
+                <td class="num">{{ r.share_bps / 100 }}%</td>
+                <td class="num">{{ downline(r.level) }}</td>
+                <td class="num money">{{ earned(r.level) | rupiah }}</td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr><th>Total</th><th></th><th class="num">{{ s.downline.total }}</th><th class="num money">{{ s.earned.total | rupiah }}</th></tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  }
+
+  <section class="card spaced" aria-labelledby="h-riwayat">
+    <h2 id="h-riwayat">Riwayat komisi</h2>
+    @if (loadingList()) {
+      <p class="muted">Memuat…</p>
+    } @else if (items().length === 0) {
+      <p class="muted">Belum ada komisi. Komisi muncul saat downline Anda membayar iuran.</p>
+    } @else {
+      <ul class="list">
+        @for (c of items(); track c.id) {
+          <li class="row spread">
+            <div>
+              <div>Dari <strong>{{ c.source_name }}</strong> · level {{ c.level }}</div>
+              <div class="small muted">{{ c.share_bps / 100 }}% dari biaya platform · {{ c.created_at | date: 'd MMM y, HH:mm' }}</div>
+            </div>
+            <div class="money plus">+{{ c.amount | rupiah }}</div>
+          </li>
+        }
+      </ul>
+      @if (next() !== null) {
+        <button type="button" class="btn block" (click)="more()" [disabled]="loadingMore()">
+          {{ loadingMore() ? 'Memuat…' : 'Muat lebih banyak' }}
+        </button>
+      }
+    }
+  </section>
+</div>

@@ -189,3 +189,11 @@ progress { width: 100%; height: 8px; accent-color: var(--primary); margin: 4px 0
 ol.list { padding-left: 0; }
 
 app-members-panel, app-draw-panel, app-rounds-panel, app-topup-item { display: block; }
+
+.link { flex: 1; min-width: 200px; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; min-height: 40px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
+th.num, td.num { text-align: right; }
+tfoot th { border-bottom: 0; }
+.plus { color: var(--ok); }

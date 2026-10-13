@@ -50,6 +50,8 @@ export const routes: Routes = [
       { path: 'grup/baru', loadComponent: () => import('./features/groups/group-create').then((m) => m.GroupCreate), title: 'Buat grup - GeoPatungan' },
       { path: 'grup/gabung', loadComponent: () => import('./features/groups/group-join').then((m) => m.GroupJoin), title: 'Gabung grup - GeoPatungan' },
       { path: 'grup/:id', loadComponent: () => import('./features/groups/group-detail').then((m) => m.GroupDetail), title: 'Grup - GeoPatungan' },
+      { path: 'profil', loadComponent: () => import('./features/profile/profile').then((m) => m.Profile), title: 'Profil - GeoPatungan' },
+      { path: 'referral', loadComponent: () => import('./features/referral/referral').then((m) => m.Referral), title: 'Referral - GeoPatungan' },
       {
         path: 'admin',
         canActivate: [adminGuard],

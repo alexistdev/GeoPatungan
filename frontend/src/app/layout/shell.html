@@ -5,6 +5,8 @@
       <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Beranda</a>
       <a routerLink="/grup" routerLinkActive="active">Grup</a>
       <a routerLink="/dompet" routerLinkActive="active">Dompet</a>
+      <a routerLink="/referral" routerLinkActive="active">Referral</a>
+      <a routerLink="/profil" routerLinkActive="active">Profil</a>
       @if (auth.isAdmin()) {
         <a routerLink="/admin" routerLinkActive="active">Admin</a>
       }

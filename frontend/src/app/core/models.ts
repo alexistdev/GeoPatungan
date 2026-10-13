@@ -316,3 +316,30 @@ export interface Draw {
   executed_at: string | null;
   entries: DrawEntry[];
 }
+
+export interface KycState {
+  kyc_status: 'none' | 'pending' | 'verified' | 'rejected';
+  latest_request: KycRequest | null;
+}
+
+export interface ReferralSummary {
+  referral_code: string;
+  eligible: boolean;
+  rules: CommissionRule[];
+  downline: { level_1: number; level_2: number; level_3: number; level_4: number; total: number };
+  earned: { total: number; by_level: Record<string, number> };
+}
+
+export interface CommissionEntry {
+  id: number;
+  level: number;
+  share_bps: number;
+  amount: number;
+  source_name: string;
+  created_at: string;
+}
+
+export interface CommissionPage {
+  commissions: CommissionEntry[];
+  next_before: number | null;
+}

@@ -2,7 +2,7 @@
   <h1>Halo, {{ auth.user()?.name }}</h1>
   <p class="muted">
     Kode referral Anda: <strong>{{ auth.user()?.referral_code }}</strong> ·
-    <span class="badge" [class.ok]="auth.user()?.kyc_status === 'verified'">{{ kycLabel(auth.user()?.kyc_status) }}</span>
+    <a routerLink="/profil" class="badge" [class.ok]="auth.user()?.kyc_status === 'verified'">{{ kycLabel(auth.user()?.kyc_status) }}</a>
   </p>
 
   <div class="grid">
