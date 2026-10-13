@@ -59,7 +59,7 @@ describe('WalletPage', () => {
     button(el, 'Muat lebih banyak').click();
     ctl().expectOne((r) => r.url === '/api/wallet/ledger' && r.params.get('before') === '2').flush({ entries: [entry(1, 100)], next_before: null });
     f.detectChanges();
-    expect(el.querySelectorAll('li').length).toBe(3);
+    expect(el.querySelectorAll('ul.list-group li').length).toBe(3);
     expect(el.textContent).not.toContain('Muat lebih banyak');
   });
 
@@ -234,7 +234,7 @@ describe('WithdrawPage', () => {
     ctl().expectOne('/api/wallet/').flush({ wallet: { id: 'w', balance: 400_000, created_at: '' } });
     f.detectChanges();
     expect(el.textContent).toContain('Rp400.000');
-    expect(el.querySelectorAll('article').length).toBe(1);
+    expect(el.querySelectorAll('[data-testid=item]').length).toBe(1);
     expect(el.querySelector<HTMLInputElement>('input[formControlName=bank_name]')!.value).toBe('');
   });
 
@@ -249,13 +249,13 @@ describe('WithdrawPage', () => {
 
   it('pembatalan hanya untuk yang diproses, lalu saldo disegarkan', () => {
     const { f, el } = mount([wd({ id: 'a', status: 'pending' }), wd({ id: 'b', status: 'completed', transfer_reference: 'REF-1' })]);
-    expect(el.querySelectorAll('button.danger').length).toBe(1);
+    expect(el.querySelectorAll('button.btn-soft-danger').length).toBe(1);
     expect(el.textContent).toContain('REF-1');
     button(el, 'Batalkan').click();
     ctl().expectOne('/api/wallet/withdrawals/a/cancel').flush({ withdrawal: wd({ id: 'a', status: 'cancelled' }) });
     ctl().expectOne('/api/wallet/').flush({ wallet: { id: 'w', balance: 600_000, created_at: '' } });
     f.detectChanges();
-    expect(el.querySelectorAll('button.danger').length).toBe(0);
+    expect(el.querySelectorAll('button.btn-soft-danger').length).toBe(0);
     expect(el.textContent).toContain('Dibatalkan');
   });
 });

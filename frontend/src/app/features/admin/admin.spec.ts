@@ -113,7 +113,7 @@ describe('AdminTopups', () => {
 
   it('hanya yang belum diputuskan punya tombol; kedaluwarsa tetap bisa disetujui', () => {
     const { el } = mount([topup({ id: 'a', status: 'approved' }), topup({ id: 'b', status: 'expired' }), topup({ id: 'c', status: 'cancelled' })]);
-    const cards = el.querySelectorAll('article');
+    const cards = el.querySelectorAll('[data-testid=item]');
     expect(cards[0].querySelector('button')).toBeNull();
     expect(cards[1].textContent).toContain('Setujui');
     expect(cards[2].querySelector('button')).toBeNull();
@@ -126,7 +126,7 @@ describe('AdminTopups', () => {
     sel.dispatchEvent(new Event('change'));
     ctl().expectOne((r) => r.params.get('status') === 'all').flush({ topups: [topup({ status: 'approved' })] });
     f.detectChanges();
-    expect(el.querySelectorAll('article').length).toBe(1);
+    expect(el.querySelectorAll('[data-testid=item]').length).toBe(1);
   });
 });
 
@@ -178,7 +178,7 @@ describe('AdminWithdrawals', () => {
 
   it('yang sudah selesai tidak punya tombol', () => {
     const { el } = mount([wd({ status: 'completed', transfer_reference: 'REF-1' })]);
-    expect(el.querySelector('article button')).toBeNull();
+    expect(el.querySelector('[data-testid=item] button')).toBeNull();
     expect(el.textContent).toContain('REF-1');
   });
 });
@@ -214,6 +214,23 @@ describe('AdminKyc', () => {
     expect(app.request.body).toEqual({ note: '' });
     app.flush({});
     ctl().expectOne((r) => r.url === '/api/admin/kyc').flush({ requests: [] });
+  });
+});
+
+describe('AdminKyc status akhir', () => {
+  afterEach(() => ctl().verify());
+  it('yang sudah diverifikasi atau ditolak tidak punya tombol aksi', () => {
+    setup();
+    const f = TestBed.createComponent(AdminKyc);
+    f.detectChanges();
+    ctl().expectOne((r) => r.url === '/api/admin/kyc').flush({ requests: [kyc({ id: 'a', status: 'verified' }), kyc({ id: 'b', status: 'rejected', review_note: 'buram' })] });
+    f.detectChanges();
+    const el = f.nativeElement as HTMLElement;
+    const cards = el.querySelectorAll('[data-testid=item]');
+    expect(cards.length).toBe(2);
+    cards.forEach((c) => expect(c.querySelector('button')).toBeNull());
+    expect(el.textContent).toContain('Terverifikasi');
+    expect(el.textContent).toContain('buram');
   });
 });
 

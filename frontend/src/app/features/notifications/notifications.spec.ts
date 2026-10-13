@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { AppNotification, NotificationPage } from '../../core/models';
 import { NotificationService } from '../../core/notifications';
@@ -14,7 +15,7 @@ const page = (items: AppNotification[], next: number | null, unread: number): No
 });
 
 function mount() {
-  TestBed.configureTestingModule({ imports: [Notifications], providers: [provideHttpClient(), provideHttpClientTesting()] });
+  TestBed.configureTestingModule({ imports: [Notifications], providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()] });
   const ctl = TestBed.inject(HttpTestingController);
   const fixture = TestBed.createComponent(Notifications);
   fixture.detectChanges();
@@ -51,7 +52,7 @@ describe('Notifications', () => {
     const req = ctl.expectOne((r) => r.url === '/api/me/notifications/' && r.params.get('before') === '2');
     req.flush(page([note(1)], null, 2));
     fixture.detectChanges();
-    expect(el.querySelectorAll('li').length).toBe(3);
+    expect(el.querySelectorAll('ul.list-group li').length).toBe(3);
     expect(el.textContent).not.toContain('Muat lebih banyak');
   });
 

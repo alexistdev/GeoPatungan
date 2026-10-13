@@ -66,7 +66,7 @@ describe('Profile', () => {
   it('syarat level berikutnya: progres dihitung, syarat keterlambatan tanpa bar', () => {
     const { el } = mount({ kyc_status: 'none', latest_request: null });
     expect(el.textContent).toContain('Menuju level 2: Terpercaya');
-    const bars = Array.from(el.querySelectorAll('progress')).map((p) => p.getAttribute('value'));
+    const bars = Array.from(el.querySelectorAll('.progress-bar')).map((p) => p.getAttribute('data-percent'));
     expect(bars).toEqual(['0', '67']);
     expect(el.textContent).toContain('2 dari 3');
     expect(el.textContent).toContain('Keterlambatan Anda 1 (batas 0)');
@@ -75,7 +75,7 @@ describe('Profile', () => {
   it('level tertinggi: tanpa daftar syarat', () => {
     const { el } = mount({ kyc_status: 'verified', latest_request: null }, rep({ next_level: null }));
     expect(el.textContent).toContain('level tertinggi');
-    expect(el.querySelector('progress')).toBeNull();
+    expect(el.querySelector('.progress-bar')).toBeNull();
   });
 
   it('belum terverifikasi: ajukan, tampilkan form, kirim catatan bersih, status berubah menunggu', () => {

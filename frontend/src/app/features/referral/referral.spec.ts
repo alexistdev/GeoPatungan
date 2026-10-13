@@ -55,7 +55,7 @@ describe('Referral', () => {
 
   it('akun terverifikasi: tanpa peringatan', () => {
     const { el } = mount(summary({ eligible: true }));
-    expect(el.querySelector('.alert.warn')).toBeNull();
+    expect(el.querySelector('.alert-warning')).toBeNull();
   });
 
   it('bagian desimal tampil benar (12,5%)', () => {
@@ -77,7 +77,7 @@ describe('Referral', () => {
     Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes('Muat lebih banyak'))!.click();
     ctl.expectOne((r) => r.url === '/api/me/referral/commissions' && r.params.get('before') === '2').flush(page([entry(1)], null));
     f.detectChanges();
-    expect(el.querySelectorAll('ul.list li').length).toBe(3);
+    expect(el.querySelectorAll('ul.list-group li').length).toBe(3);
     expect(el.textContent).not.toContain('Muat lebih banyak');
   });
 

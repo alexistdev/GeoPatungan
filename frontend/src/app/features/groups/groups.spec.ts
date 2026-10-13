@@ -280,7 +280,8 @@ describe('MembersPanel', () => {
     const { el } = mount([member('m1', 'Andi', { user_id: 'owner' }), member('x', 'Dewi', { status: 'removed' }), ...pend]);
     expect(el.textContent).toContain('Anggota (1/3)');
     expect(el.textContent).toContain('Pemilik');
-    expect(el.querySelector('ul.list:last-of-type')?.textContent).not.toContain('Dewi');
+    const lists = el.querySelectorAll('ul.list-group-flush');
+    expect(lists[lists.length - 1]?.textContent).not.toContain('Dewi');
   });
 });
 
@@ -350,6 +351,14 @@ describe('DrawPanel', () => {
     expect(items[0]).toContain('bobot 2');
     expect(el.textContent).toContain('Verifikasi kocokan');
     expect(el.textContent).toContain('weighted_es_v1');
+  });
+
+  it('manual dan grup belum penuh: peringatan, tanpa editor urutan dan tanpa tombol tetapkan', () => {
+    const { el } = mount(null, { g: group({ draw_method: 'manual', active_members: 2 }), ms: [members3[0], members3[1]] });
+    expect(el.textContent).toContain('harus penuh (2/3)');
+    expect(el.textContent).toContain('sebelum urutan ditetapkan');
+    expect(button(el, 'Tetapkan urutan')).toBeUndefined();
+    expect(el.querySelector('button[aria-label^="Naikkan"]')).toBeNull();
   });
 
   it('manual: urutan awal sesuai bergabung, naik/turun, lalu ditetapkan', () => {
