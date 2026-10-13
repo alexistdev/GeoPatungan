@@ -35,7 +35,7 @@ private/incognito**, atau browser lain, untuk tiap akun:
 | Peran | Cara mendapatkan |
 |---|---|
 | Admin | daftar di `/daftar`, lalu naikkan perannya (lihat di bawah) |
-| Pemilik grup (mis. Andi) | daftar di `/daftar` |
+| Pemilik grup (mis. Andi) | akun **admin**: hanya admin yang bisa membuat grup, jadi naikkan perannya (lihat di bawah) |
 | Anggota (mis. Budi, Cici) | daftar di `/daftar` |
 
 Menjadikan akun sebagai admin (peran hanya bisa diberikan lewat CLI, tidak lewat aplikasi):
@@ -46,7 +46,8 @@ cd backend && go run ./cmd/admin promote email-anda@example.com
 ```
 
 Perannya langsung berlaku. Admin **tidak boleh memproses permintaannya sendiri** (top-up, penarikan, KYC), jadi
-jangan memakai akun admin sebagai anggota yang top-up.
+pemilik grup (admin) yang perlu top-up harus disetujui admin lain. Siapkan dua akun admin: satu untuk mengurus
+platform, satu lagi sebagai pemilik grup.
 
 ## 1. Admin: atur platform (sekali saja)
 
@@ -67,9 +68,10 @@ Login sebagai tiap pemilik dan anggota, menu **Dompet → Isi saldo**:
 
 Ulangi untuk semua yang akan membayar iuran: pemilik dan semua anggota.
 
-## 3. Pemilik: buat grup
+## 3. Pemilik (admin): buat grup
 
-Login pemilik, menu **Grup → Buat grup**:
+Hanya **admin** yang bisa membuat grup (anggota biasa hanya bisa bergabung; tombol dan halaman **Buat grup**
+tidak tersedia bagi mereka). Login admin yang akan menjadi pemilik, menu **Grup → Buat grup**:
 
 - Isi nama, iuran per anggota (Rp10.000 sampai Rp100.000.000), jumlah anggota/slot (2 sampai 50), periode,
   tanggal mulai (paling cepat besok), dan denda keterlambatan (0 sampai sebesar iuran).
@@ -154,5 +156,6 @@ penerima tarik, lalu admin menyelesaikan.
 | "address already in use" | Port 8080 dipakai proses lain; hentikan atau jalankan `PORT=8081 go run ./cmd/api` dan sesuaikan proxy |
 | Gagal konek database | `docker ps` harus menampilkan `geopatungan-db` berstatus Up |
 | Top-up gagal: "rekening tujuan transfer belum diatur oleh admin" | Admin belum menambah rekening aktif (langkah 1) |
+| Tombol "Buat grup" tidak ada / "akses ditolak" | Hanya admin yang boleh membuat grup |
 | Tidak bisa membuat kocokan | Grup belum penuh, atau Anda bukan pemilik grup |
 | Tombol bayar nonaktif | Saldo kurang, atau putaran belum berstatus Pengumpulan iuran |

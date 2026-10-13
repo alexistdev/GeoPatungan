@@ -83,6 +83,23 @@ describe('GroupList', () => {
     expect(t).toContain('Menunggu persetujuan pemilik');
   });
 
+  it('tombol Buat grup hanya untuk admin', () => {
+    const render = (role: 'admin' | 'member') => {
+      TestBed.resetTestingModule();
+      setup();
+      TestBed.inject(AuthService).user.set({ id: 'u', role } as User);
+      const f = TestBed.createComponent(GroupList);
+      f.detectChanges();
+      ctl().expectOne('/api/groups/').flush({ groups: [] });
+      f.detectChanges();
+      return f.nativeElement as HTMLElement;
+    };
+    expect(render('admin').querySelector('a[href="/grup/baru"]')).not.toBeNull();
+    const member = render('member');
+    expect(member.querySelector('a[href="/grup/baru"]')).toBeNull();
+    expect(member.querySelector('a[href="/grup/gabung"]')).not.toBeNull();
+  });
+
   it('kosong dan galat', () => {
     setup();
     const f = TestBed.createComponent(GroupList);

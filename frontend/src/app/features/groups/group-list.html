@@ -2,7 +2,9 @@
 
 <div class="d-flex flex-wrap gap-2 justify-content-end mb-3">
   <a class="btn btn-light" routerLink="/grup/gabung"><i class="ri-key-2-line align-bottom me-1"></i> Gabung dengan kode</a>
-  <a class="btn btn-primary" routerLink="/grup/baru"><i class="ri-add-line align-bottom me-1"></i> Buat grup</a>
+  @if (isAdmin()) {
+    <a class="btn btn-primary" routerLink="/grup/baru"><i class="ri-add-line align-bottom me-1"></i> Buat grup</a>
+  }
 </div>
 
 @if (error(); as msg) {
@@ -16,7 +18,7 @@
     <div class="card-body text-center py-5">
       <div class="avatar-md mx-auto mb-3"><span class="avatar-title bg-primary-subtle rounded-circle fs-1"><i class="ri-group-line text-primary"></i></span></div>
       <h5>Anda belum bergabung di grup mana pun</h5>
-      <p class="text-muted mb-0">Buat grup baru, atau gabung memakai kode undangan dari pemilik grup.</p>
+      <p class="text-muted mb-0">Gabung memakai kode undangan dari pemilik grup.</p>
     </div>
   </div>
 } @else {

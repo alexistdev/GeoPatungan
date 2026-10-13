@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { AuthService } from '../../core/auth';
 import { errorMessage } from '../../core/errors';
 import { GroupService } from '../../core/groups';
 import { Group } from '../../core/models';
@@ -16,6 +17,7 @@ import { RupiahPipe } from '../../shared/rupiah-pipe';
 export class GroupList implements OnInit {
   private readonly groups = inject(GroupService);
 
+  protected readonly isAdmin = inject(AuthService).isAdmin;
   protected readonly items = signal<Group[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);

@@ -47,7 +47,7 @@ export const routes: Routes = [
         title: 'Tarik dana - GeoPatungan',
       },
       { path: 'grup', loadComponent: () => import('./features/groups/group-list').then((m) => m.GroupList), title: 'Grup - GeoPatungan' },
-      { path: 'grup/baru', loadComponent: () => import('./features/groups/group-create').then((m) => m.GroupCreate), title: 'Buat grup - GeoPatungan' },
+      { path: 'grup/baru', canActivate: [adminGuard], loadComponent: () => import('./features/groups/group-create').then((m) => m.GroupCreate), title: 'Buat grup - GeoPatungan' },
       { path: 'grup/gabung', loadComponent: () => import('./features/groups/group-join').then((m) => m.GroupJoin), title: 'Gabung grup - GeoPatungan' },
       { path: 'grup/:id', loadComponent: () => import('./features/groups/group-detail').then((m) => m.GroupDetail), title: 'Grup - GeoPatungan' },
       { path: 'profil', loadComponent: () => import('./features/profile/profile').then((m) => m.Profile), title: 'Profil - GeoPatungan' },
