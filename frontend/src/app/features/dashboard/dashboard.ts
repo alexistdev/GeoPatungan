@@ -1,13 +1,14 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth';
 import { errorMessage } from '../../core/errors';
+import { GroupService } from '../../core/groups';
 import { MeService } from '../../core/me';
-import { MyContribution, ReputationProfile, Wallet } from '../../core/models';
+import { Group, MyContribution, ReputationProfile, Wallet } from '../../core/models';
 import { PageTitle } from '../../shared/page-title';
-import { TONE } from '../../shared/labels';
+import { TONE, groupLabel } from '../../shared/labels';
 import { RupiahPipe } from '../../shared/rupiah-pipe';
 
 /** Bagian halaman yang dimuat sendiri-sendiri: satu gagal tidak menghapus yang lain. */
@@ -29,10 +30,15 @@ function pending<T>(): Section<T> {
 export class Dashboard implements OnInit {
   protected readonly auth = inject(AuthService);
   private readonly me = inject(MeService);
+  private readonly groupService = inject(GroupService);
 
   protected readonly wallet = signal<Section<Wallet>>(pending());
   protected readonly reputation = signal<Section<ReputationProfile>>(pending());
   protected readonly dues = signal<Section<MyContribution[]>>(pending());
+  protected readonly groups = signal<Section<Group[]>>(pending());
+  protected readonly groupLabel = groupLabel;
+  /** Grup yang saya ikuti (bukan yang masih menunggu persetujuan atau ditolak). */
+  protected readonly activeGroups = computed(() => (this.groups().data ?? []).filter((g) => g.my_status === 'active'));
 
   ngOnInit(): void {
     this.me.wallet().subscribe({
@@ -46,6 +52,10 @@ export class Dashboard implements OnInit {
     this.me.contributions('unpaid').subscribe({
       next: (data) => this.dues.set({ loading: false, data, error: null }),
       error: (e: unknown) => this.dues.set({ loading: false, data: null, error: errorMessage(e) }),
+    });
+    this.groupService.mine().subscribe({
+      next: (data) => this.groups.set({ loading: false, data, error: null }),
+      error: (e: unknown) => this.groups.set({ loading: false, data: null, error: errorMessage(e) }),
     });
   }
 

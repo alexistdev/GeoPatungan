@@ -1,21 +1,28 @@
 <app-page-title title="Beranda" />
 
-<div class="row mb-3 pb-1">
-  <div class="col-12">
-    <div class="d-flex align-items-lg-center flex-lg-row flex-column">
-      <div class="flex-grow-1">
-        <h4 class="fs-16 mb-1">Halo, {{ auth.user()?.name }}!</h4>
+<div class="card border-0 overflow-hidden" data-testid="hero">
+  <div class="card-body bg-primary-subtle">
+    <div class="row align-items-center g-3">
+      <div class="col-lg">
+        <h4 class="mb-1">Halo, {{ auth.user()?.name }}!</h4>
         <p class="text-muted mb-0">
           Kode referral Anda <span class="fw-semibold text-body">{{ auth.user()?.referral_code }}</span> ·
           <a routerLink="/profil" class="badge" [class]="kycTone(auth.user()?.kyc_status)">{{ kycLabel(auth.user()?.kyc_status) }}</a>
         </p>
+      </div>
+      <div class="col-lg-auto d-flex flex-wrap gap-2">
+        <a routerLink="/dompet/isi-saldo" class="btn btn-primary"><i class="ri-wallet-3-line align-bottom me-1"></i> Isi saldo</a>
+        <a routerLink="/grup/gabung" class="btn btn-light"><i class="ri-key-2-line align-bottom me-1"></i> Gabung grup</a>
+        @if (auth.isAdmin()) {
+          <a routerLink="/grup/baru" class="btn btn-light"><i class="ri-add-line align-bottom me-1"></i> Buat grup</a>
+        }
       </div>
     </div>
   </div>
 </div>
 
 <div class="row">
-  <div class="col-xl-4 col-md-6">
+  <div class="col-xl-3 col-md-6">
     <div class="card card-animate">
       <div class="card-body">
         <div class="d-flex align-items-center">
@@ -44,7 +51,7 @@
     </div>
   </div>
 
-  <div class="col-xl-4 col-md-6">
+  <div class="col-xl-3 col-md-6">
     <div class="card card-animate">
       <div class="card-body">
         <div class="d-flex align-items-center">
@@ -71,7 +78,7 @@
     </div>
   </div>
 
-  <div class="col-xl-4 col-md-6">
+  <div class="col-xl-3 col-md-6">
     <div class="card card-animate">
       <div class="card-body">
         <div class="d-flex align-items-center">
@@ -92,6 +99,29 @@
           </div>
           <div class="avatar-sm flex-shrink-0">
             <span class="avatar-title bg-warning-subtle rounded fs-3"><i class="ri-time-line text-warning"></i></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6">
+    <div class="card card-animate">
+      <div class="card-body">
+        <p class="text-uppercase fw-medium text-muted text-truncate mb-0">Grup aktif</p>
+        <div class="d-flex align-items-end justify-content-between mt-4">
+          <div>
+            @if (groups().loading) {
+              <h4 class="fs-22 fw-semibold mb-4 placeholder-glow"><span class="placeholder col-8"></span></h4>
+            } @else if (groups().error) {
+              <h4 class="fs-22 fw-semibold mb-4">-</h4>
+            } @else {
+              <h4 class="fs-22 fw-semibold mb-4" data-testid="active-groups">{{ activeGroups().length }}</h4>
+            }
+            <a routerLink="/grup" class="text-decoration-underline">Lihat grup</a>
+          </div>
+          <div class="avatar-sm flex-shrink-0">
+            <span class="avatar-title bg-info-subtle rounded fs-3"><i class="ri-group-line text-info"></i></span>
           </div>
         </div>
       </div>
@@ -160,5 +190,36 @@
         }
       </div>
     </div>
+  </div>
+</div>
+
+<div class="card" data-testid="my-groups">
+  <div class="card-header d-flex align-items-center">
+    <h5 class="card-title mb-0 flex-grow-1">Grup saya</h5>
+    <a routerLink="/grup" class="btn btn-sm btn-soft-primary">Semua grup</a>
+  </div>
+  <div class="card-body">
+    @if (groups().loading) {
+      <p class="text-muted mb-0">Memuat…</p>
+    } @else if (groups().error; as msg) {
+      <div class="alert alert-danger mb-0" role="alert">{{ msg }}</div>
+    } @else if (activeGroups().length === 0) {
+      <p class="text-muted mb-0">Anda belum bergabung di grup mana pun. <a routerLink="/grup/gabung">Gabung dengan kode</a>.</p>
+    } @else {
+      <div class="row g-3">
+        @for (g of activeGroups(); track g.id) {
+          <div class="col-xl-4 col-md-6">
+            <a class="card card-body border mb-0 text-body text-decoration-none" [routerLink]="['/grup', g.id]" data-testid="group-card">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="mb-0">{{ g.name }}</h6>
+                <span class="badge" [class]="groupLabel(g.status).tone">{{ groupLabel(g.status).text }}</span>
+              </div>
+              <div class="fw-semibold money">{{ g.contribution_amount | rupiah }}</div>
+              <div class="text-muted fs-13">{{ g.active_members }} dari {{ g.slot_count }} anggota</div>
+            </a>
+          </div>
+        }
+      </div>
+    }
   </div>
 </div>
