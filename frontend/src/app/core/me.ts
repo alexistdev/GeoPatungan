@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
@@ -18,7 +18,7 @@ export class MeService {
   }
 
   contributions(status?: 'unpaid' | 'paid'): Observable<MyContribution[]> {
-    const url = status ? `/api/me/contributions?status=${status}` : '/api/me/contributions';
-    return this.http.get<{ contributions: MyContribution[] }>(url).pipe(map((r) => r.contributions));
+    const params = status ? new HttpParams().set('status', status) : new HttpParams();
+    return this.http.get<{ contributions: MyContribution[] }>('/api/me/contributions', { params }).pipe(map((r) => r.contributions));
   }
 }
