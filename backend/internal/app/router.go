@@ -102,7 +102,7 @@ func NewRouter(db *pgxpool.Pool, tokens *auth.TokenManager, middlewares ...func(
 				referralHandler.AdminRoutes(r)
 			})
 			r.Route("/groups", func(r chi.Router) {
-				groupHandler.Routes(r)
+				groupHandler.Routes(r, middleware.RequireRole(userRepo, "admin"))
 				drawHandler.Routes(r)
 				roundHandler.Routes(r)
 				contributionHandler.Routes(r)

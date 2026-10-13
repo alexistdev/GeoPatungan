@@ -30,7 +30,7 @@ func newTestServer(level int) http.Handler {
 				next.ServeHTTP(w, req.WithContext(httpx.WithUser(req.Context(), id, "member")))
 			})
 		})
-		r.Route("/groups", h.Routes)
+		r.Route("/groups", func(r chi.Router) { h.Routes(r, nil) })
 	})
 	return r
 }
@@ -162,5 +162,27 @@ func TestHandlerJoinLevelTooLow(t *testing.T) {
 	code, _ := call(t, srv, "u-newbie", http.MethodPost, "/groups/join", `{"invite_code":"`+g["invite_code"].(string)+`"}`)
 	if code != http.StatusForbidden {
 		t.Errorf("status = %d, want 403", code)
+	}
+}
+
+func TestCreateGuard(t *testing.T) {
+	h := NewHandler(newTestService(newFakeStore(), 1))
+	deny := func(http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { httpx.Error(w, http.StatusForbidden, "akses ditolak") })
+	}
+	r := chi.NewRouter()
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			next.ServeHTTP(w, req.WithContext(httpx.WithUser(req.Context(), "u1", "member")))
+		})
+	})
+	r.Route("/groups", func(r chi.Router) { h.Routes(r, deny) })
+
+	if code, _ := call(t, r, "u1", "POST", "/groups", createBody); code != http.StatusForbidden {
+		t.Fatalf("buat grup: %d, mau 403", code)
+	}
+	// guard hanya untuk pembuatan: daftar grup dan gabung tetap terbuka
+	if code, _ := call(t, r, "u1", "GET", "/groups", ""); code != http.StatusOK {
+		t.Fatalf("daftar grup: %d, mau 200", code)
 	}
 }

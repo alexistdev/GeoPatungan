@@ -293,7 +293,7 @@ func TestRecordAPIShapes(t *testing.T) {
 	j.do("", "POST", "/api/auth/register", "/api/auth/register", map[string]any{"name": "Zz", "phone": "081234567890", "email": e.Prefix + "-ref@example.com", "password": "Password123", "referral_code": "TIDAKADA1"}, 400)
 	tA, codeA, idA := register("Andi Referrer", "a", "")
 	tB, _, idB := register("Budi Santoso", "b", codeA)
-	tC, _, _ := register("Cici", "c", "")
+	tC, _, idC := register("Cici", "c", "")
 	tD, _, _ := register("Dewi Joiner", "d", "")
 	tF, _, _ := register("Fani Tanpa Saldo", "f", "")
 	tAdm, _, idAdm := register("Admin Uji", "adm", "")
@@ -425,6 +425,10 @@ func TestRecordAPIShapes(t *testing.T) {
 		return ids
 	}
 
+	// hanya admin yang boleh membuat grup; Budi dan Cici dijadikan admin sebagai pemilik grup uji
+	j.do(tA, "POST", "/api/groups/", "/api/groups/", map[string]any{"name": "Ditolak", "contribution_amount": 100000, "period_type": "monthly", "slot_count": 2, "start_date": start, "late_fee": 0, "draw_method": "random", "min_level_rank": 1}, 403)
+	e.Exec(`UPDATE users SET role = 'admin' WHERE id = $1`, idB)
+	e.Exec(`UPDATE users SET role = 'admin' WHERE id = $1`, idC)
 	g1, inv1 := newGroup(tB, "Grup Manual", 2, "manual")
 	join(tC, inv1)
 	for _, mid := range pendingIDs(tB, g1) {

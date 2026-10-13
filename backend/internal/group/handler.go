@@ -26,8 +26,14 @@ func NewHandler(svc *Service) *Handler {
 }
 
 // Routes dipasang di bawah /api/groups dan wajib berada di balik middleware autentikasi.
-func (h *Handler) Routes(r chi.Router) {
-	r.Post("/", h.Create)
+// createGuard membatasi siapa yang boleh membuat grup (di aplikasi: hanya admin);
+// nil berarti semua pengguna yang sudah masuk.
+func (h *Handler) Routes(r chi.Router, createGuard func(http.Handler) http.Handler) {
+	if createGuard != nil {
+		r.With(createGuard).Post("/", h.Create)
+	} else {
+		r.Post("/", h.Create)
+	}
 	r.Get("/", h.ListMine)
 	r.Post("/join", h.Join)
 	// Rute dibuat rata (tanpa sub-router bersarang) supaya modul lain, mis. draw,
