@@ -1,0 +1,1012 @@
+{
+  "requests": {
+    "POST /api/admin/bank-accounts": {
+      "account_holder": "string",
+      "account_number": "string",
+      "bank_name": "string",
+      "is_active": "boolean",
+      "notes": "string"
+    },
+    "POST /api/admin/kyc/{id}/approve": {
+      "note": "string"
+    },
+    "POST /api/admin/kyc/{id}/reject": {
+      "note": "string"
+    },
+    "POST /api/admin/topups/{id}/approve": {
+      "note": "string",
+      "received_amount": "absent|number"
+    },
+    "POST /api/admin/topups/{id}/reject": {
+      "note": "string"
+    },
+    "POST /api/admin/withdrawals/{id}/complete": {
+      "note": "string",
+      "reference": "string"
+    },
+    "POST /api/admin/withdrawals/{id}/reject": {
+      "note": "string"
+    },
+    "POST /api/auth/login": {
+      "email": "string",
+      "password": "string"
+    },
+    "POST /api/auth/register": {
+      "email": "string",
+      "name": "string",
+      "password": "string",
+      "phone": "string",
+      "referral_code": "absent|string"
+    },
+    "POST /api/groups/": {
+      "contribution_amount": "number",
+      "draw_method": "string",
+      "late_fee": "number",
+      "min_level_rank": "number",
+      "name": "string",
+      "period_type": "string",
+      "slot_count": "number",
+      "start_date": "string"
+    },
+    "POST /api/groups/join": {
+      "invite_code": "string"
+    },
+    "POST /api/groups/{id}/draw/manual": {
+      "order": [
+        "string"
+      ]
+    },
+    "POST /api/me/kyc/": {
+      "note": "string"
+    },
+    "POST /api/wallet/topups": {
+      "amount": "number"
+    },
+    "POST /api/wallet/topups/{id}/confirm": {
+      "note": "string",
+      "sender_bank": "string",
+      "sender_name": "string"
+    },
+    "POST /api/wallet/withdrawals": {
+      "account_holder": "string",
+      "account_number": "string",
+      "amount": "number",
+      "bank_name": "string",
+      "note": "string"
+    },
+    "PUT /api/admin/bank-accounts/{id}": {
+      "account_holder": "string",
+      "account_number": "string",
+      "bank_name": "string",
+      "is_active": "boolean",
+      "notes": "string"
+    },
+    "PUT /api/admin/referral/rules": {
+      "rules": [
+        {
+          "level": "number",
+          "share_bps": "number"
+        }
+      ]
+    },
+    "PUT /api/admin/reputation/levels": {
+      "levels": [
+        {
+          "can_create_group": "boolean",
+          "code": "string",
+          "draw_weight": "number",
+          "max_group_value": "null|number",
+          "max_late_count": "null|number",
+          "min_completed_cycles": "number",
+          "name": "string",
+          "rank": "number",
+          "require_verified": "boolean"
+        }
+      ]
+    },
+    "PUT /api/admin/settings": {
+      "platform_fee_bps": "number",
+      "topup_expiry_hours": "number",
+      "topup_max_amount": "number",
+      "topup_min_amount": "number",
+      "withdraw_min_amount": "number"
+    }
+  },
+  "responses": {
+    "GET /api/admin/bank-accounts 200": {
+      "bank_accounts": [
+        {
+          "account_holder": "string",
+          "account_number": "string",
+          "bank_name": "string",
+          "created_at": "string",
+          "id": "string",
+          "is_active": "boolean",
+          "notes": "string",
+          "updated_at": "string"
+        }
+      ]
+    },
+    "GET /api/admin/kyc 200": {
+      "requests": [
+        {
+          "id": "string",
+          "note": "string",
+          "review_note": "string",
+          "reviewed_at": "null|string",
+          "reviewed_by": "null|string",
+          "status": "string",
+          "submitted_at": "string",
+          "user_email": "string",
+          "user_id": "string",
+          "user_name": "string"
+        }
+      ]
+    },
+    "GET /api/admin/referral/rules 200": {
+      "rules": [
+        {
+          "level": "number",
+          "share_bps": "number"
+        }
+      ]
+    },
+    "GET /api/admin/reputation/levels 200": {
+      "levels": [
+        {
+          "can_create_group": "boolean",
+          "code": "string",
+          "draw_weight": "number",
+          "max_group_value": "null|number",
+          "max_late_count": "null|number",
+          "min_completed_cycles": "number",
+          "name": "string",
+          "rank": "number",
+          "require_verified": "boolean"
+        }
+      ]
+    },
+    "GET /api/admin/settings 200": {
+      "platform_fee_bps": "number",
+      "topup_expiry_hours": "number",
+      "topup_max_amount": "number",
+      "topup_min_amount": "number",
+      "withdraw_min_amount": "number"
+    },
+    "GET /api/admin/settings 403": {
+      "error": "string"
+    },
+    "GET /api/admin/topups 200": {
+      "topups": [
+        {
+          "amount": "number",
+          "created_at": "string",
+          "expires_at": "string",
+          "id": "string",
+          "note": "string",
+          "received_amount": "null|number",
+          "review_note": "string",
+          "reviewed_at": "null|string",
+          "reviewed_by": "null|string",
+          "sender_bank": "string",
+          "sender_name": "string",
+          "status": "string",
+          "submitted_at": "null|string",
+          "transfer_amount": "number",
+          "unique_code": "number",
+          "user_email": "string",
+          "user_id": "string",
+          "user_name": "string"
+        }
+      ]
+    },
+    "GET /api/admin/wallet/reconcile 200": {
+      "entries_checked": "number",
+      "ok": "boolean",
+      "problems": [
+        "unknown"
+      ],
+      "wallets_checked": "number"
+    },
+    "GET /api/admin/withdrawals 200": {
+      "withdrawals": [
+        {
+          "account_holder": "string",
+          "account_number": "string",
+          "amount": "number",
+          "bank_name": "string",
+          "created_at": "string",
+          "id": "string",
+          "note": "string",
+          "review_note": "string",
+          "reviewed_at": "null|string",
+          "reviewed_by": "null|string",
+          "status": "string",
+          "transfer_reference": "string",
+          "user_email": "string",
+          "user_id": "string",
+          "user_name": "string"
+        }
+      ]
+    },
+    "GET /api/contributions/{id}/quote 200": {
+      "balance": "number",
+      "quote": {
+        "amount": "number",
+        "contribution_id": "string",
+        "due_date": "string",
+        "group_id": "string",
+        "late": "boolean",
+        "late_fee": "number",
+        "payable": "boolean",
+        "platform_fee": "number",
+        "round_id": "string",
+        "round_status": "string",
+        "status": "string",
+        "total": "number"
+      },
+      "sufficient": "boolean"
+    },
+    "GET /api/groups/ 200": {
+      "groups": [
+        {
+          "active_members": "number",
+          "contribution_amount": "number",
+          "created_at": "string",
+          "draw_method": "string",
+          "id": "string",
+          "invite_code": "absent|string",
+          "late_fee": "number",
+          "min_level_rank": "number",
+          "my_status": "string",
+          "name": "string",
+          "owner_id": "string",
+          "period_type": "string",
+          "slot_count": "number",
+          "start_date": "string",
+          "status": "string"
+        }
+      ]
+    },
+    "GET /api/groups/{id} 200": {
+      "active_members": "number",
+      "contribution_amount": "number",
+      "created_at": "string",
+      "draw_method": "string",
+      "id": "string",
+      "invite_code": "string",
+      "late_fee": "number",
+      "min_level_rank": "number",
+      "my_status": "string",
+      "name": "string",
+      "owner_id": "string",
+      "period_type": "string",
+      "slot_count": "number",
+      "start_date": "string",
+      "status": "string"
+    },
+    "GET /api/groups/{id}/draw 200": {
+      "algorithm": "string",
+      "committed_at": "string",
+      "entries": [
+        {
+          "member_id": "string",
+          "score": "absent|number",
+          "turn_order": "null|number",
+          "user_name": "string",
+          "weight": "number"
+        }
+      ],
+      "executed_at": "null|string",
+      "group_id": "string",
+      "id": "string",
+      "seed_commit": "absent|string",
+      "seed_reveal": "absent|string"
+    },
+    "GET /api/groups/{id}/draw 404": {
+      "error": "string"
+    },
+    "GET /api/groups/{id}/members 200": {
+      "members": [
+        {
+          "group_id": "string",
+          "id": "string",
+          "joined_at": "string",
+          "status": "string",
+          "turn_order": "null",
+          "user_id": "string",
+          "user_name": "string"
+        }
+      ]
+    },
+    "GET /api/groups/{id}/rounds 200": {
+      "rounds": [
+        {
+          "due_date": "string",
+          "group_id": "string",
+          "id": "string",
+          "member_count": "number",
+          "paid_count": "number",
+          "pot_amount": "number",
+          "recipient_member_id": "string",
+          "recipient_name": "string",
+          "round_no": "number",
+          "status": "string"
+        }
+      ]
+    },
+    "GET /api/groups/{id}/rounds/{roundID}/contributions 200": {
+      "contributions": [
+        {
+          "amount": "number",
+          "due_date": "string",
+          "id": "string",
+          "late_fee": "number",
+          "member_id": "string",
+          "overdue": "boolean",
+          "paid_at": "null",
+          "paid_on_time": "null",
+          "platform_fee": "number",
+          "round_id": "string",
+          "round_no": "number",
+          "status": "string",
+          "user_name": "string"
+        }
+      ]
+    },
+    "GET /api/me 200": {
+      "created_at": "string",
+      "email": "string",
+      "id": "string",
+      "kyc_status": "string",
+      "name": "string",
+      "phone": "string",
+      "referral_code": "string",
+      "referred_by": "null",
+      "role": "string"
+    },
+    "GET /api/me 401": {
+      "error": "string"
+    },
+    "GET /api/me/contributions 200": {
+      "contributions": [
+        {
+          "amount": "number",
+          "due_date": "string",
+          "group_id": "string",
+          "group_name": "string",
+          "id": "string",
+          "late_fee": "number",
+          "member_id": "string",
+          "overdue": "boolean",
+          "paid_at": "null",
+          "paid_on_time": "null",
+          "platform_fee": "number",
+          "round_id": "string",
+          "round_no": "number",
+          "status": "string",
+          "user_name": "string"
+        }
+      ]
+    },
+    "GET /api/me/kyc/ 200": {
+      "kyc_status": "string",
+      "latest_request": {
+        "$optional": {
+          "id": "string",
+          "note": "string",
+          "review_note": "string",
+          "reviewed_at": "null|string",
+          "status": "string",
+          "submitted_at": "string",
+          "user_id": "string"
+        },
+        "$when": "null"
+      }
+    },
+    "GET /api/me/notifications/ 200": {
+      "next_before": "null",
+      "notifications": [
+        {
+          "body": "string",
+          "created_at": "string",
+          "data": {
+            "amount": "absent|number",
+            "contribution_id": "absent|string",
+            "kyc_request_id": "absent|string",
+            "level": "absent|number",
+            "topup_id": "absent|string",
+            "withdrawal_id": "absent|string"
+          },
+          "id": "number",
+          "read": "boolean",
+          "title": "string",
+          "type": "string"
+        }
+      ],
+      "unread_count": "number"
+    },
+    "GET /api/me/notifications/unread-count 200": {
+      "unread_count": "number"
+    },
+    "GET /api/me/referral/ 200": {
+      "downline": {
+        "level_1": "number",
+        "level_2": "number",
+        "level_3": "number",
+        "level_4": "number",
+        "total": "number"
+      },
+      "earned": {
+        "by_level": {
+          "1": "number",
+          "2": "number",
+          "3": "number",
+          "4": "number"
+        },
+        "total": "number"
+      },
+      "eligible": "boolean",
+      "referral_code": "string",
+      "rules": [
+        {
+          "level": "number",
+          "share_bps": "number"
+        }
+      ]
+    },
+    "GET /api/me/referral/commissions 200": {
+      "commissions": [
+        {
+          "amount": "number",
+          "created_at": "string",
+          "id": "number",
+          "level": "number",
+          "share_bps": "number",
+          "source_name": "string"
+        }
+      ],
+      "next_before": "null"
+    },
+    "GET /api/me/reputation 200": {
+      "level": {
+        "can_create_group": "boolean",
+        "code": "string",
+        "draw_weight": "number",
+        "max_group_value": "number",
+        "max_late_count": "null",
+        "min_completed_cycles": "number",
+        "name": "string",
+        "rank": "number",
+        "require_verified": "boolean"
+      },
+      "next_level": {
+        "level": {
+          "can_create_group": "boolean",
+          "code": "string",
+          "draw_weight": "number",
+          "max_group_value": "number",
+          "max_late_count": "number",
+          "min_completed_cycles": "number",
+          "name": "string",
+          "rank": "number",
+          "require_verified": "boolean"
+        },
+        "requirements": [
+          {
+            "current": "number",
+            "key": "string",
+            "label": "string",
+            "met": "boolean",
+            "required": "number"
+          }
+        ]
+      },
+      "stats": {
+        "completed_cycles": "number",
+        "kyc_status": "string",
+        "late_payments": "number",
+        "late_total": "number",
+        "on_time_payments": "number",
+        "overdue_unpaid": "number",
+        "verified": "boolean"
+      }
+    },
+    "GET /api/payment-info 200": {
+      "bank_accounts": [
+        "unknown"
+      ],
+      "platform_fee_bps": "number",
+      "topup_expiry_hours": "number",
+      "topup_max_amount": "number",
+      "topup_min_amount": "number",
+      "withdraw_min_amount": "number"
+    },
+    "GET /api/wallet/ 200": {
+      "wallet": {
+        "balance": "number",
+        "created_at": "string",
+        "id": "string"
+      }
+    },
+    "GET /api/wallet/ledger 200": {
+      "entries": [
+        {
+          "amount": "number",
+          "balance_after": "number",
+          "created_at": "string",
+          "description": "string",
+          "id": "number",
+          "ref_id": "string",
+          "ref_type": "string"
+        }
+      ],
+      "next_before": "null"
+    },
+    "GET /api/wallet/topups 200": {
+      "topups": [
+        {
+          "amount": "number",
+          "created_at": "string",
+          "expires_at": "string",
+          "id": "string",
+          "note": "string",
+          "received_amount": "null|number",
+          "review_note": "string",
+          "reviewed_at": "null|string",
+          "sender_bank": "string",
+          "sender_name": "string",
+          "status": "string",
+          "submitted_at": "null|string",
+          "transfer_amount": "number",
+          "unique_code": "number",
+          "user_id": "string"
+        }
+      ]
+    },
+    "GET /api/wallet/withdrawals 200": {
+      "withdrawals": [
+        {
+          "account_holder": "string",
+          "account_number": "string",
+          "amount": "number",
+          "bank_name": "string",
+          "created_at": "string",
+          "id": "string",
+          "note": "string",
+          "review_note": "string",
+          "reviewed_at": "null|string",
+          "status": "string",
+          "transfer_reference": "string",
+          "user_id": "string"
+        }
+      ]
+    },
+    "POST /api/admin/bank-accounts 201": {
+      "account_holder": "string",
+      "account_number": "string",
+      "bank_name": "string",
+      "created_at": "string",
+      "id": "string",
+      "is_active": "boolean",
+      "notes": "string",
+      "updated_at": "string"
+    },
+    "POST /api/admin/kyc/{id}/approve 200": {
+      "request": {
+        "id": "string",
+        "note": "string",
+        "review_note": "string",
+        "reviewed_at": "string",
+        "status": "string",
+        "submitted_at": "string",
+        "user_id": "string"
+      }
+    },
+    "POST /api/admin/kyc/{id}/reject 200": {
+      "request": {
+        "id": "string",
+        "note": "string",
+        "review_note": "string",
+        "reviewed_at": "string",
+        "status": "string",
+        "submitted_at": "string",
+        "user_id": "string"
+      }
+    },
+    "POST /api/admin/topups/{id}/approve 200": {
+      "topup": {
+        "amount": "number",
+        "created_at": "string",
+        "expires_at": "string",
+        "id": "string",
+        "note": "string",
+        "received_amount": "number",
+        "review_note": "string",
+        "reviewed_at": "string",
+        "sender_bank": "string",
+        "sender_name": "string",
+        "status": "string",
+        "submitted_at": "string",
+        "transfer_amount": "number",
+        "unique_code": "number",
+        "user_id": "string"
+      }
+    },
+    "POST /api/admin/topups/{id}/reject 200": {
+      "topup": {
+        "amount": "number",
+        "created_at": "string",
+        "expires_at": "string",
+        "id": "string",
+        "note": "string",
+        "received_amount": "null",
+        "review_note": "string",
+        "reviewed_at": "string",
+        "sender_bank": "string",
+        "sender_name": "string",
+        "status": "string",
+        "submitted_at": "null",
+        "transfer_amount": "number",
+        "unique_code": "number",
+        "user_id": "string"
+      }
+    },
+    "POST /api/admin/withdrawals/{id}/complete 200": {
+      "withdrawal": {
+        "account_holder": "string",
+        "account_number": "string",
+        "amount": "number",
+        "bank_name": "string",
+        "created_at": "string",
+        "id": "string",
+        "note": "string",
+        "review_note": "string",
+        "reviewed_at": "string",
+        "status": "string",
+        "transfer_reference": "string",
+        "user_id": "string"
+      }
+    },
+    "POST /api/admin/withdrawals/{id}/reject 200": {
+      "withdrawal": {
+        "account_holder": "string",
+        "account_number": "string",
+        "amount": "number",
+        "bank_name": "string",
+        "created_at": "string",
+        "id": "string",
+        "note": "string",
+        "review_note": "string",
+        "reviewed_at": "string",
+        "status": "string",
+        "transfer_reference": "string",
+        "user_id": "string"
+      }
+    },
+    "POST /api/auth/login 200": {
+      "token": "string",
+      "user": {
+        "created_at": "string",
+        "email": "string",
+        "id": "string",
+        "kyc_status": "string",
+        "name": "string",
+        "phone": "string",
+        "referral_code": "string",
+        "referred_by": "null",
+        "role": "string"
+      }
+    },
+    "POST /api/auth/login 401": {
+      "error": "string"
+    },
+    "POST /api/auth/register 201": {
+      "token": "string",
+      "user": {
+        "created_at": "string",
+        "email": "string",
+        "id": "string",
+        "kyc_status": "string",
+        "name": "string",
+        "phone": "string",
+        "referral_code": "string",
+        "referred_by": "null|string",
+        "role": "string"
+      }
+    },
+    "POST /api/auth/register 400": {
+      "error": "string"
+    },
+    "POST /api/contributions/{id}/pay 200": {
+      "balance": "number",
+      "receipt": {
+        "amount": "number",
+        "contribution_id": "string",
+        "group_id": "string",
+        "late_fee": "number",
+        "paid_at": "string",
+        "paid_on_time": "boolean",
+        "platform_fee": "number",
+        "round_id": "string",
+        "total": "number"
+      },
+      "round": {
+        "completed": "boolean",
+        "group_done": "boolean",
+        "payout": {
+          "$optional": {
+            "amount": "number",
+            "recipient_name": "string"
+          },
+          "$when": "null"
+        }
+      }
+    },
+    "POST /api/contributions/{id}/pay 402": {
+      "balance": "number",
+      "error": "string",
+      "required": "number"
+    },
+    "POST /api/contributions/{id}/pay 409": {
+      "error": "string"
+    },
+    "POST /api/groups/ 201": {
+      "active_members": "number",
+      "contribution_amount": "number",
+      "created_at": "string",
+      "draw_method": "string",
+      "id": "string",
+      "invite_code": "string",
+      "late_fee": "number",
+      "min_level_rank": "number",
+      "my_status": "string",
+      "name": "string",
+      "owner_id": "string",
+      "period_type": "string",
+      "slot_count": "number",
+      "start_date": "string",
+      "status": "string"
+    },
+    "POST /api/groups/join 201": {
+      "active_members": "number",
+      "contribution_amount": "number",
+      "created_at": "string",
+      "draw_method": "string",
+      "id": "string",
+      "late_fee": "number",
+      "min_level_rank": "number",
+      "my_status": "string",
+      "name": "string",
+      "owner_id": "string",
+      "period_type": "string",
+      "slot_count": "number",
+      "start_date": "string",
+      "status": "string"
+    },
+    "POST /api/groups/{id}/draw/commit 201": {
+      "algorithm": "string",
+      "committed_at": "string",
+      "entries": [
+        {
+          "member_id": "string",
+          "turn_order": "null",
+          "user_name": "string",
+          "weight": "number"
+        }
+      ],
+      "executed_at": "null",
+      "group_id": "string",
+      "id": "string",
+      "seed_commit": "string"
+    },
+    "POST /api/groups/{id}/draw/execute 200": {
+      "algorithm": "string",
+      "committed_at": "string",
+      "entries": [
+        {
+          "member_id": "string",
+          "score": "number",
+          "turn_order": "number",
+          "user_name": "string",
+          "weight": "number"
+        }
+      ],
+      "executed_at": "string",
+      "group_id": "string",
+      "id": "string",
+      "seed_commit": "string",
+      "seed_reveal": "string"
+    },
+    "POST /api/groups/{id}/draw/manual 201": {
+      "algorithm": "string",
+      "committed_at": "string",
+      "entries": [
+        {
+          "member_id": "string",
+          "turn_order": "number",
+          "user_name": "string",
+          "weight": "number"
+        }
+      ],
+      "executed_at": "string",
+      "group_id": "string",
+      "id": "string"
+    },
+    "POST /api/groups/{id}/members/{memberID}/approve 200": {
+      "status": "string"
+    },
+    "POST /api/groups/{id}/members/{memberID}/reject 200": {
+      "status": "string"
+    },
+    "POST /api/me/kyc/ 201": {
+      "request": {
+        "id": "string",
+        "note": "string",
+        "review_note": "string",
+        "reviewed_at": "null",
+        "status": "string",
+        "submitted_at": "string",
+        "user_id": "string"
+      }
+    },
+    "POST /api/me/kyc/ 409": {
+      "error": "string"
+    },
+    "POST /api/me/notifications/read-all 200": {
+      "updated": "number"
+    },
+    "POST /api/me/notifications/{id}/read 200": {
+      "read": "boolean"
+    },
+    "POST /api/wallet/topups 201": {
+      "bank_accounts": [
+        {
+          "account_holder": "string",
+          "account_number": "string",
+          "bank_name": "string",
+          "created_at": "string",
+          "id": "string",
+          "is_active": "boolean",
+          "notes": "string",
+          "updated_at": "string"
+        }
+      ],
+      "topup": {
+        "amount": "number",
+        "created_at": "string",
+        "expires_at": "string",
+        "id": "string",
+        "note": "string",
+        "received_amount": "null",
+        "review_note": "string",
+        "reviewed_at": "null",
+        "sender_bank": "string",
+        "sender_name": "string",
+        "status": "string",
+        "submitted_at": "null",
+        "transfer_amount": "number",
+        "unique_code": "number",
+        "user_id": "string"
+      }
+    },
+    "POST /api/wallet/topups 400": {
+      "error": "string"
+    },
+    "POST /api/wallet/topups/{id}/cancel 200": {
+      "topup": {
+        "amount": "number",
+        "created_at": "string",
+        "expires_at": "string",
+        "id": "string",
+        "note": "string",
+        "received_amount": "null",
+        "review_note": "string",
+        "reviewed_at": "null",
+        "sender_bank": "string",
+        "sender_name": "string",
+        "status": "string",
+        "submitted_at": "null",
+        "transfer_amount": "number",
+        "unique_code": "number",
+        "user_id": "string"
+      }
+    },
+    "POST /api/wallet/topups/{id}/confirm 200": {
+      "topup": {
+        "amount": "number",
+        "created_at": "string",
+        "expires_at": "string",
+        "id": "string",
+        "note": "string",
+        "received_amount": "null",
+        "review_note": "string",
+        "reviewed_at": "null",
+        "sender_bank": "string",
+        "sender_name": "string",
+        "status": "string",
+        "submitted_at": "string",
+        "transfer_amount": "number",
+        "unique_code": "number",
+        "user_id": "string"
+      }
+    },
+    "POST /api/wallet/withdrawals 201": {
+      "withdrawal": {
+        "account_holder": "string",
+        "account_number": "string",
+        "amount": "number",
+        "bank_name": "string",
+        "created_at": "string",
+        "id": "string",
+        "note": "string",
+        "review_note": "string",
+        "reviewed_at": "null",
+        "status": "string",
+        "transfer_reference": "string",
+        "user_id": "string"
+      }
+    },
+    "POST /api/wallet/withdrawals 402": {
+      "balance": "number",
+      "error": "string",
+      "required": "number"
+    },
+    "POST /api/wallet/withdrawals/{id}/cancel 200": {
+      "withdrawal": {
+        "account_holder": "string",
+        "account_number": "string",
+        "amount": "number",
+        "bank_name": "string",
+        "created_at": "string",
+        "id": "string",
+        "note": "string",
+        "review_note": "string",
+        "reviewed_at": "null",
+        "status": "string",
+        "transfer_reference": "string",
+        "user_id": "string"
+      }
+    },
+    "PUT /api/admin/bank-accounts/{id} 200": {
+      "account_holder": "string",
+      "account_number": "string",
+      "bank_name": "string",
+      "created_at": "string",
+      "id": "string",
+      "is_active": "boolean",
+      "notes": "string",
+      "updated_at": "string"
+    },
+    "PUT /api/admin/referral/rules 200": {
+      "rules": [
+        {
+          "level": "number",
+          "share_bps": "number"
+        }
+      ]
+    },
+    "PUT /api/admin/reputation/levels 200": {
+      "levels": [
+        {
+          "can_create_group": "boolean",
+          "code": "string",
+          "draw_weight": "number",
+          "max_group_value": "null|number",
+          "max_late_count": "null|number",
+          "min_completed_cycles": "number",
+          "name": "string",
+          "rank": "number",
+          "require_verified": "boolean"
+        }
+      ]
+    },
+    "PUT /api/admin/settings 200": {
+      "platform_fee_bps": "number",
+      "topup_expiry_hours": "number",
+      "topup_max_amount": "number",
+      "topup_min_amount": "number",
+      "withdraw_min_amount": "number"
+    }
+  }
+}
