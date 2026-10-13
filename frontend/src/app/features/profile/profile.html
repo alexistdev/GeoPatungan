@@ -98,8 +98,6 @@
 
           <h6 class="mt-4">Hak Anda</h6>
           <ul class="list-group list-group-flush fs-13 mb-4">
-            <li class="list-group-item px-0">Peluang kocokan berbobot: <strong>×{{ rep.level.draw_weight }}</strong></li>
-            <li class="list-group-item px-0">Membuat grup: <strong>{{ rep.level.can_create_group ? 'Boleh' : 'Belum boleh' }}</strong></li>
             <li class="list-group-item px-0">Nilai grup maksimal: <strong>{{ rep.level.max_group_value === null ? 'Tanpa batas' : (rep.level.max_group_value | rupiah) }}</strong></li>
           </ul>
 
@@ -132,7 +130,7 @@
               }
             </ul>
             <p class="fs-13 text-muted mt-3 mb-0">
-              Hak level berikutnya: peluang kocokan ×{{ next.level.draw_weight }}, nilai grup maksimal
+              Hak level berikutnya: nilai grup maksimal
               {{ next.level.max_group_value === null ? 'tanpa batas' : (next.level.max_group_value | rupiah) }}.
             </p>
           } @else {

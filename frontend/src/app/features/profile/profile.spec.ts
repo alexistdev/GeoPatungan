@@ -51,9 +51,8 @@ describe('Profile', () => {
   it('menampilkan akun, hak level, dan catatan', () => {
     const { el } = mount({ kyc_status: 'none', latest_request: null });
     expect(el.textContent).toContain('a@x.id');
-    expect(el.textContent).toContain('×1');
     expect(el.textContent).toContain('Rp500.000');
-    expect(el.textContent).toContain('Boleh');
+    for (const t of ['kocokan', '×', 'Membuat grup', 'Boleh']) expect(el.textContent).not.toContain(t);
     const nums = Array.from(el.querySelectorAll('.stats .big')).map((n) => n.textContent!.trim());
     expect(nums).toEqual(['2', '5', '1', '0']);
   });
